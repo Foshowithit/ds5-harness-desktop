@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Harness Desktop 5.0 — RCOS on DeepSeek Harness</title>
+<meta name="description" content="Nine scenes, one score, 21 seconds. Route. Execute. Verify. — a deterministic motion-graphics film rendered from a React + framer-motion source tree." />
+<meta name="theme-color" content="#050507" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Harness Desktop 5.0 — RCOS on DeepSeek Harness" />
+<meta property="og:description" content="Nine scenes, one score, 21 seconds. Route. Execute. Verify. — a deterministic motion-graphics film rendered from a React + framer-motion source tree." />
+<meta property="og:image" content="opengraph-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Harness Desktop 5.0 — RCOS on DeepSeek Harness" />
+<meta name="twitter:description" content="Nine scenes, one score, 21 seconds. Route. Execute. Verify. — a deterministic motion-graphics film rendered from a React + framer-motion source tree." />
+<meta name="twitter:image" content="opengraph-image.png" />
+<link rel="stylesheet" href="fonts/fonts.css" />
+<link rel="stylesheet" href="film.css" />
+<style>
+  /* next/font/google declares these three variables on <html> at build time.
+     The film's type system reads them (--font-display -> var(--font-archivo),
+     --font-sans -> var(--font-geist-sans)), so without them every glyph falls
+     back to a default face and the whole design collapses. Declared here with
+     real fallbacks so a font-load failure degrades instead of vanishing. */
+  :root {
+    --font-archivo: 'Archivo';
+    --font-geist-sans: 'Geist', system-ui, -apple-system, sans-serif;
+    --font-geist-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  }
+  html, body { margin: 0; padding: 0; height: 100%; background: #050507; }
+  #root { height: 100%; }
+</style>
+</head>
+<body class="antialiased">
+<div id="root"></div>
+<script type="module" src="bundle.js"></script>
+</body>
+</html>

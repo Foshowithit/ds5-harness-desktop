@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Harness Desktop 5.0 — watch the film</title>
+<meta name="description" content="A 21-second deterministic motion-graphics film: DeepSeek x RCOS, Harness Desktop 5.0." />
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #050507; color: #e8e8ee;
+         font: 15px/1.6 ui-sans-serif, -apple-system, Segoe UI, Roboto, sans-serif; }
+  main { max-width: 1000px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { font-size: 22px; letter-spacing: -.01em; margin: 0 0 4px; }
+  p.sub { color: #8b8b9a; margin: 0 0 28px; }
+  video { width: 100%; height: auto; border-radius: 10px; background: #000; display: block;
+          box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+  a.btn { display: inline-block; padding: 9px 15px; border-radius: 8px; text-decoration: none;
+          background: #17171f; color: #e8e8ee; border: 1px solid #26262f; font-size: 14px; }
+  a.btn:hover { background: #202029; }
+  footer { margin-top: 40px; color: #6c6c7a; font-size: 13px; }
+  code { background: #17171f; padding: 2px 6px; border-radius: 5px; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Harness Desktop 5.0</h1>
+  <p class="sub">Nine scenes, one score, 21 seconds. Route. Execute. Verify. &mdash; DeepSeek &times; RCOS.</p>
+  <video controls playsinline preload="metadata" poster="opengraph-image.png">
+    <source src="film/ds5-film-x.mp4" type="video/mp4" />
+  </video>
+  <div class="row">
+    <a class="btn" href="film/ds5-film-x.mp4" download>Download 720p (6.5 MB)</a>
+    <a class="btn" href="film/ds5-film-1080p.mp4" download>Download 1080p master (24.5 MB)</a>
+    <a class="btn" href="./">Open the interactive film</a>
+    <a class="btn" href="https://github.com/adamnorm4wd/ds5-harness-desktop" target="_blank" rel="noopener">Source &amp; pipeline</a>
+  </div>
+  <footer>
+    Rendered deterministically from a React + framer-motion source tree &mdash; 505 frames at 24 fps,
+    cut to the measured spectral-flux onsets of the score. Every frame is reproducible from the
+    committed source; see <code>WORKFLOW.md</code>.
+  </footer>
+</main>
+</body>
+</html>

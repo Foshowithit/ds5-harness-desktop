@@ -1,0 +1,697 @@
+# ds5-film-render-v1 -- THE MAC-LOCAL FILM LANE. Drives the DS5 harness in place.
+#
+# WHY THIS LANE EXISTS (RULE 10c gap, ledger #685 -- OPEN at authoring time).
+# Measured, not inferred: the estate's two dedicated film lanes cannot act on a
+# Mac-local, non-house-layout film.
+#   * film-render.yaml  sha256 34bd6f96a1cb2251a065225bb5b8541a6d7b4edebb6e69927a10e2ea5f73a15a
+#   * film-refine.yaml  sha256 410e5d405bb1c7216f50ec6764499365389e917185f51938025503c4263a546c
+# `grep -c adam-macbook` == 0 for BOTH, so archon-lane's laneReachesMac() sees no
+# Darwin hop and REFUSES a Mac write-root with EXIT=2. The one Mac-reaching lane
+# (chow-mac-file-ops) LANDS bytes rather than rendering, and film-refine's input
+# contract needs a house layout this deliverable does not have. So: no lane could
+# render this film. This lane is that lane.
+#
+# THE PREDICATE, STATED SO THE READER CAN CHECK IT. laneReachesMac() greps a lane's
+# own YAML on the Dell for `ssh <host>` tokens, keeps real ~/.ssh/config host
+# aliases, and runs `ssh <h> 'uname -s'` on each. Any Darwin stands the gate down.
+# The regex needs the host token BARE -- `ssh adam-macbook`, not `ssh "$MAC"` --
+# which is why the literal appears in this comment AND as the default value below.
+# Measured from the Dell:
+#
+#     ssh adam-macbook 'uname -s'  ->  Darwin   (host Mac, HOME=/Users/adam26)
+#
+# THE TOPOLOGY, STATED BECAUSE IT IS THE WHOLE DIFFICULTY. archon runs on the DELL
+# (chow). The Mac is NOT a workflow executor (topology ruled 2026-10-01) and the
+# Dell has no /Users at all (`ssh chow 'ls -d /Users'` -> "No such file or
+# directory"). So every node here is a hop: the Dell runs `ssh adam-macbook '...'`.
+# The bridge is the Dell's ~/.ssh/config `Host adam-macbook` entry (mDNS, so
+# name-stable). The artifact is Mac-local BY CONSTRUCTION, and the receipt is
+# carried back across the bridge so the Dell-side artifact is a real file with real
+# bytes rather than a restatement of the lane's own claims.
+#
+# BASH-ONLY BY DESIGN. No `provider`, no `model`. A MEASUREMENT LANE MUST NOT BE
+# ABLE TO FAIL FOR A REASON THAT HAS NOTHING TO DO WITH WHAT IT MEASURES -- and the
+# estate's authoring lanes (chow-workflow-factory-v4, chow-spec-from-idea,
+# chow-lane-gap-recon, chow-lane-merge-map) ALL carry a pi/muse model leg, which is
+# exactly the leg that dies when a provider is unhealthy. Precedent:
+# chow-mac-local-build-v1, chow-loop-polish-v1, chow-blender-plate-v1.
+#
+# WHAT IT RENDERS, AND WHY IT DRIVES THE PROJECT IN PLACE. It orchestrates the DS5
+# harness -- six Node stages that already exist and are already independently
+# verified:
+#
+#     build.mjs         source tree -> dist/ (published + capture surfaces)   ~3.6 s
+#     bands.mjs         measure the score's onsets -> harness/bands.bin       ~5.5 s
+#     capture.mjs       headless Chrome, pinned clock -> frames/f0000..f0504 ~158.5 s
+#     encode.mjs        frames + audio -> out/*.mp4, with a probe gate        ~18 s
+#     publish.mjs       dist/ -> the published tree, with a 5-predicate gate
+#     verify-pages.mjs  serve the tree at its REAL Pages subpath, drive it, assert
+#
+# IT RUNS IN PLACE, AND THAT IS NOT A PREFERENCE. Measured: build.mjs:43,
+# bands.mjs:74 and capture.mjs:60 each pin `const ROOT = '/tmp/ds5-render'`, and
+# build.mjs and bands.mjs contain ZERO `argv.indexOf` calls -- there is no flag
+# that relocates them. encode.mjs / publish.mjs / verify-pages.mjs / capture.mjs
+# each have exactly one, and only for their own inputs and outputs. So the project
+# must run at its own root; the lane ASSERTS that root rather than pretending it
+# can be aimed elsewhere.
+#
+# THE PORTABILITY CONTRACT, STATED HONESTLY. This lane is SHAREABLE as a
+# self-describing, self-asserting artifact another operator can read and adapt. It
+# is NOT machine-portable as written, and this header says so rather than implying
+# otherwise. The harness's pins, enumerated by measurement:
+#   * the Node binary
+#     /Users/adam26/.workbuddy-ai/binaries/node/versions/22.22.2-3/bin/node
+#     hardcoded in build.mjs:42 AND og-card.mjs:68
+#   * a DEPENDENCY workspace /Users/adam26/.workbuddy-ai/binaries/node/workspace/
+#     resolved by createRequire at build.mjs:39, capture.mjs:57, encode.mjs:45,
+#     verify-pages.mjs:83, bands.mjs:192, og-card.mjs:276. This is where esbuild,
+#     playwright-core, ffmpeg-static and ffprobe-static actually live. The project's
+#     OWN node_modules (36 entries) is the film's import closure -- a different and
+#     smaller set -- which is why the lane asserts BOTH trees.
+#   * a SOURCE workspace
+#     /Users/adam26/Downloads/workspace-36152170-e6b2-41b1-a251-36d6216e50d3 (1)
+#     read at build.mjs:49/:102 (public/), bands.mjs:78/:79
+#     (src/lib/promo/timeline.ts) and og-card.mjs:73/:74
+#     (src/app/opengraph-image.tsx)
+#   * the chromium pin, four times: bands.mjs:82, capture.mjs:68, og-card.mjs:77,
+#     verify-pages.mjs:99. The harness pins an explicit executablePath BECAUSE
+#     playwright-core@1.63.0's browsers.json asks for chromium-1243, which is NOT
+#     installed -- the cache holds chromium-1223 (og-card.mjs:53-58 records this).
+#     So the lane asserts THE PIN, parsed out of those four files, and requires the
+#     copies to agree. It must NOT ask playwright-core's resolver: that resolver
+#     returns the uninstalled build, and asking it REFUSED a tree that renders
+#     (measured 2026-10-06 -- the gate fired its own declared 'chromium unresolvable'
+#     failure on a healthy tree, and 7 downstream nodes were skipped for it).
+#   * ROOT = '/tmp/ds5-render', four times.
+# To port it, repoint those constants or reproduce the environment. FILM_MAC and
+# FILM_ROOT (or `MAC=`/`ROOT=` on the task string) override the two values this lane
+# itself owns.
+#
+# WHAT IT REFUSES TO DO, LEARNED THE HARD WAY. It never treats an exit code as
+# evidence. `exit 0` from a Node stage is a statement about that process, not about
+# the film -- and this project has ALREADY produced a 505-frame run that was an
+# EMPTY GRAIN FIELD with every gate green (the millisecond/second unit mismatch at
+# the clock-init boundary). So every stage asserts the RECORDED EVIDENCE: frame
+# counts, the aggregate content share, the pinned-clock error, the four-way mutation
+# control, the staged-tree fidelity. See `evidence/*.json` assertions in the helper.
+#
+# WHAT IT REFUSES TO DO, PART TWO: TRUST A STALE EVIDENCE FILE. The assertion helper
+# reads `evidence/<stage>.json` from disk, so a stage that FAILS having produced
+# nothing would otherwise be asserted against the PREVIOUS run's evidence -- and pass.
+# That is the class "an evidence file that survives its own failure", and it is
+# measured here, not hypothesised: a deliberate publish failure at 14:11 left the
+# 14:11-SUCCESS `evidence/publish.json` on disk, 1,690 B, and a naive stage would have
+# read it. Every stage node therefore REMOVES its own evidence file before it runs, so
+# the file on disk at assertion time can only be this run's. If the stage then fails to
+# produce it, `ev()` throws ENOENT and the assertion fails -- which is the correct
+# outcome for a stage that produced nothing.
+# NOTE the mapping is NOT uniform: the `verify` stage asserts `evidence/pages.json`,
+# not `evidence/verify.json`, because that is the name verify-pages.mjs writes.
+name: ds5-film-render-v1
+description: 'DS5 FILM RENDER -- orchestrate the DS5 harness in place on the Mac and prove the film is real. Eight bash-only nodes, every one an ssh hop to adam-macbook: preflight -> build -> bands -> capture -> encode -> publish -> verify -> receipt. Drives the project at its own root (/tmp/ds5-render) because three stages pin that path and two have no arg parser at all. Every stage asserts the RECORDED EVIDENCE, never an exit code: 505 frames / 505 distinct / aggregate content share >= 0.25 / maxClockError == 0 / hud off / 4-of-4 mutation control / the published tree driven at its real GitHub Pages subpath. Use when: rendering, re-rendering or verifying the DS5 promo film, or proving the pipeline that produces it still holds. NOT for: authoring a new film, editing the film code, or any film project in a different layout. No provider, no model, no credits. Closes the RULE 10c gap #685: film-render and film-refine carry ZERO Mac hops and refuse a Mac write-root with EXIT=2, and the one Mac-reaching lane lands bytes rather than rendering.'
+purpose: 'Close the RULE 10c gap for Mac-local film rendering: the estate could render a film in its own house layout, but no lane could drive a Mac-local, non-house-layout film project in place. This lane is also what makes archon-lane laneReachesMac() fire for a media write-root -- a Mac write-root is dispatchable exactly when the lane itself hops to Darwin.'
+routing:
+  category: media
+  tags: [media, film, render, mac-local, mac-bridge, ssh-hop, ffmpeg, playwright, headless-chrome, evidence-assertions, bash-only, receipt, rule-10c]
+effort: high
+eval:
+  check_type: artifact_check
+  pass: [preflight.txt says PREFLIGHT OK, build.txt says BUILD OK, bands.txt says BANDS OK, capture.txt says CAPTURE OK, encode.txt says ENCODE OK, publish.txt says PUBLISH OK, verify.txt says VERIFY OK, RECEIPT.md exists and says VERDICT PASS]
+  fail: [missing receipt, VERDICT not PASS, mac bridge unreachable, dependency workspace absent, source workspace absent, chromium unresolvable, frame count not 505, distinct frames not 505, aggregate content share below the floor, pinned-clock error nonzero, mutation control did not reject 4 of 4, published tree missing the lane it documents, pages subpath verification failed]
+  check: |
+    set -eu
+    for s in preflight build bands capture encode publish verify; do
+      f="$ARTIFACTS_DIR/$s.txt"
+      test -s "$f" || { echo "FAIL $s.txt missing"; exit 1; }
+      up=$(printf '%s' "$s" | tr '[:lower:]' '[:upper:]')
+      grep -q "^$up OK" "$f" || { echo "FAIL $s.txt does not say $up OK"; exit 1; }
+    done
+    test -s "$ARTIFACTS_DIR/RECEIPT.md" || { echo "FAIL RECEIPT.md missing"; exit 1; }
+    grep -q '^VERDICT: PASS' "$ARTIFACTS_DIR/RECEIPT.md" \
+      || { echo "FAIL receipt does not say VERDICT: PASS"; exit 1; }
+    echo "PASS: film rendered, every stage asserted on recorded evidence, receipted"
+nodes:
+- id: preflight
+  bash: |
+    set -euo pipefail
+    mkdir -p "$ARTIFACTS_DIR"
+    printf '%s\n' "$ARGUMENTS" > "$ARTIFACTS_DIR/request.txt"
+
+    # Optional space-free KEY=VALUE overrides on the task string. A documented
+    # limit of this parser, not a silent behaviour: a value containing a space is
+    # not expressible here. Use the env vars for those.
+    kv() {
+      for tok in $ARGUMENTS; do
+        case "$tok" in
+          "$1"=*) printf '%s' "${tok#*=}"; return 0 ;;
+        esac
+      done
+      return 0
+    }
+
+    MAC="${FILM_MAC:-adam-macbook}"
+    ROOT="${FILM_ROOT:-/tmp/ds5-render}"
+    v=$(kv MAC);  [ -n "$v" ] && MAC="$v"
+    v=$(kv ROOT); [ -n "$v" ] && ROOT="$v"
+
+    NODE_BIN="/Users/adam26/.workbuddy-ai/binaries/node/versions/22.22.2-3/bin/node"
+    DEP_WS="/Users/adam26/.workbuddy-ai/binaries/node/workspace"
+    SRC_WS="/Users/adam26/Downloads/workspace-36152170-e6b2-41b1-a251-36d6216e50d3 (1)"
+    LANE_DIR="/tmp/ds5-lane"
+
+    echo "== PREFLIGHT =="
+    echo "mac       : $MAC"
+    echo "root      : $ROOT"
+    echo "node      : $NODE_BIN"
+    echo "dep ws    : $DEP_WS"
+    echo "source ws : $SRC_WS"
+
+    # The bridge FIRST. Everything below is a hop through it, and a dead bridge
+    # would otherwise surface as seven unrelated node failures with seven different
+    # messages, none of which names the actual cause.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" 'echo MAC_BRIDGE_OK' \
+      | awk '$0=="MAC_BRIDGE_OK"{f=1} END{exit(f?0:1)}' \
+      || { echo "PREFLIGHT FAIL: cannot reach '$MAC' over ssh (BatchMode, 15s). The Dell reaches the Mac by the ~/.ssh/config Host alias; check it on the Dell."; exit 1; }
+    echo "bridge OK"
+
+    # The node runtime the harness pins by absolute path.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "test -x '$NODE_BIN'" \
+      || { echo "PREFLIGHT FAIL: node binary not executable on the mac: $NODE_BIN"; exit 1; }
+    echo "node OK"
+
+    # The project root, and the three things inside it the harness reads.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" \
+      "test -d '$ROOT/harness' && test -d '$ROOT/app' && test -s '$ROOT/audio/ds5-film-bed.mp3' && test -s '$ROOT/audio/ds5-film-bed.wav'" \
+      || { echo "PREFLIGHT FAIL: '$ROOT' is missing harness/, app/, or one of the two audio inputs"; exit 1; }
+    echo "project OK"
+
+    # BOTH workspaces. The DEPENDENCY workspace is where esbuild / playwright-core /
+    # ffmpeg-static / ffprobe-static actually live (resolved by createRequire, not
+    # out of the project's own node_modules, which is a different and smaller set).
+    # The SOURCE workspace is read for timeline.ts, opengraph-image.tsx and public/.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" \
+      "for p in esbuild playwright-core ffmpeg-static ffprobe-static; do test -d '$DEP_WS/node_modules/'\$p || { echo \"MISSING \$p\"; exit 1; }; done" \
+      || { echo "PREFLIGHT FAIL: dependency workspace incomplete under $DEP_WS/node_modules"; exit 1; }
+    echo "dep workspace OK"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" \
+      "test -s '$SRC_WS/src/lib/promo/timeline.ts' && test -s '$SRC_WS/src/app/opengraph-image.tsx' && test -d '$SRC_WS/public'" \
+      || { echo "PREFLIGHT FAIL: source workspace incomplete: $SRC_WS (need src/lib/promo/timeline.ts, src/app/opengraph-image.tsx, public/)"; exit 1; }
+    echo "source workspace OK"
+
+    # Values are carried in FILES, not in a sourced env file: a path with a quote, a
+    # space or a newline in it (and SRC_WS has both a space and parentheses) would
+    # otherwise be re-parsed by the shell and silently mutate the very string the
+    # lane is supposed to build from. `$(cat ...)` cannot.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "mkdir -p '$LANE_DIR'"
+    printf '%s' "$MAC"      > "$ARTIFACTS_DIR/mac.txt"
+    printf '%s' "$ROOT"     > "$ARTIFACTS_DIR/root.txt"
+    printf '%s' "$NODE_BIN" > "$ARTIFACTS_DIR/node.txt"
+    printf '%s' "$DEP_WS"   > "$ARTIFACTS_DIR/dep_ws.txt"
+    printf '%s' "$SRC_WS"   > "$ARTIFACTS_DIR/src_ws.txt"
+    printf '%s' "$LANE_DIR" > "$ARTIFACTS_DIR/lane_dir.txt"
+    printf '%s' "$MAC"      | ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cat > '$LANE_DIR/mac.txt'"
+    printf '%s' "$ROOT"     | ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cat > '$LANE_DIR/root.txt'"
+    printf '%s' "$NODE_BIN" | ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cat > '$LANE_DIR/node.txt'"
+    printf '%s' "$DEP_WS"   | ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cat > '$LANE_DIR/dep_ws.txt'"
+    printf '%s' "$SRC_WS"   | ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cat > '$LANE_DIR/src_ws.txt'"
+
+    # The evidence assertion helper. It lives OUTSIDE the project tree so it cannot
+    # perturb the published file set the boundary gate measures, and it is written
+    # once here so every later node is four lines instead of forty. It reads the
+    # RECORDED EVIDENCE -- see the header for why an exit code is not evidence.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cat > '$LANE_DIR/assert.mjs'" <<'ASSERTEOF'
+    // ds5-lane assert.mjs -- run ON THE MAC, by the preflight node of ds5-film-render-v1.
+    // One stage name per invocation. Prints "<STAGE> OK" and exits 0, or prints every
+    // FAIL line and exits 1. It reads evidence/*.json, never an exit code.
+    import fs from 'node:fs'
+    import path from 'node:path'
+    import crypto from 'node:crypto'
+    import { createRequire } from 'node:module'
+
+    const LANE = '/tmp/ds5-lane'
+    const rd = (f) => fs.readFileSync(f, 'utf8').trim()
+    const ROOT = rd(path.join(LANE, 'root.txt'))
+    const DEP_WS = rd(path.join(LANE, 'dep_ws.txt'))
+    const SRC_WS = rd(path.join(LANE, 'src_ws.txt'))
+
+    const stage = process.argv[2]
+    const fails = []
+    const need = (cond, msg) => { if (!cond) fails.push(msg) }
+    // Fail CLOSED and CLEANLY when the evidence file is absent. The stage node removes
+    // the file before running, so absence means this run produced nothing -- which is
+    // exactly the case that must not pass. Returning {} (rather than throwing) lets the
+    // per-field assertions below still print their own lines, so the operator sees both
+    // the cause and the shape of what was expected.
+    const ev = (n) => {
+      const f = path.join(ROOT, 'evidence', n + '.json')
+      if (!fs.existsSync(f)) {
+        fails.push('evidence/' + n + '.json does not exist -- the stage produced no evidence (or did not run)')
+        return {}
+      }
+      try { return JSON.parse(fs.readFileSync(f, 'utf8')) }
+      catch (e) { fails.push('evidence/' + n + '.json is not valid JSON: ' + e.message); return {} }
+    }
+    const size = (p) => { try { return fs.statSync(p).size } catch { return -1 } }
+
+    if (stage === 'preflight') {
+      // The harness does NOT ask playwright-core where chromium is: it PINS an explicit
+      // executablePath (bands.mjs:82, capture.mjs:68, og-card.mjs:77, verify-pages.mjs:99),
+      // because playwright-core@1.63.0's browsers.json asks for chromium-1243, which is NOT
+      // installed -- the cache holds chromium-1223. og-card.mjs:53-58 records exactly that.
+      // Asking the registry therefore asserts a path that has never existed, and on
+      // 2026-10-06 this node REFUSED a tree that renders. So assert the path the harness WILL
+      // launch, read OUT OF the harness source, and require the copies to AGREE: a gate must
+      // not drift from the code it guards. A file that launches chromium but declares no pin
+      // is itself a failure; og-card.mjs is optional here because build.mjs spawns it and
+      // hard-fails on it, so its absence is already caught by the required list below.
+      const PIN_RE = /['"](\/Users\/[^'"]*chromium-[^'"]*Google Chrome for Testing)['"]/
+      const pinned = {}
+      for (const f of ['bands.mjs','capture.mjs','og-card.mjs','verify-pages.mjs']) {
+        const p = path.join(ROOT, 'harness', f)
+        if (!fs.existsSync(p)) continue
+        const m = fs.readFileSync(p, 'utf8').match(PIN_RE)
+        if (m) pinned[f] = m[1]
+        else need(false, 'harness/' + f + ' launches chromium but declares no executablePath pin')
+      }
+      const pins = [...new Set(Object.values(pinned))]
+      need(pins.length === 1, 'the harness chromium pins DISAGREE (' + pins.length + ' distinct): ' + JSON.stringify(pinned))
+      const chrome = process.env.CHROME_PATH || pins[0] || ''
+      try {
+        fs.accessSync(chrome, fs.constants.X_OK)
+        console.log('chromium  : ' + chrome)
+        if (pins.length === 1) console.log('  pinned by: ' + Object.keys(pinned).sort().join(', ') + ' (all agree)')
+      } catch (e) {
+        // Name BOTH subjects -- what was tested (the pin the harness launches) and what was
+        // NOT (the registry) -- so a refusal here is actionable, not merely confident.
+        let reg = 'unresolvable'
+        try { reg = createRequire(path.join(DEP_WS, 'noop.js'))('playwright-core').chromium.executablePath() }
+        catch (er) { reg = 'unresolvable (' + er.message + ')' }
+        need(false, 'the chromium the harness pins is not executable: ' + chrome + ' -- ' + e.message +
+          ' (playwright-core resolves ' + reg + ', which the harness deliberately does not use)')
+      }
+      for (const f of ['build.mjs','bands.mjs','capture.mjs','encode.mjs','publish.mjs','verify-pages.mjs','og-card.mjs','clock-init.js','pixels.mjs']) {
+        need(fs.existsSync(path.join(ROOT, 'harness', f)), 'missing harness/' + f)
+      }
+      need(size(path.join(ROOT, 'audio', 'ds5-film-bed.mp3')) === 505196, 'audio/ds5-film-bed.mp3 is not 505196 bytes')
+      need(size(path.join(ROOT, 'audio', 'ds5-film-bed.wav')) === 4032078, 'audio/ds5-film-bed.wav is not 4032078 bytes')
+      need(fs.existsSync(path.join(SRC_WS, 'src', 'lib', 'promo', 'timeline.ts')), 'source workspace missing src/lib/promo/timeline.ts')
+      need(fs.existsSync(path.join(SRC_WS, 'src', 'app', 'opengraph-image.tsx')), 'source workspace missing src/app/opengraph-image.tsx')
+      need(fs.existsSync(path.join(SRC_WS, 'public')), 'source workspace missing public/')
+      for (const d of ['frames','dist','pages','out','evidence']) {
+        const p = path.join(ROOT, d)
+        try { fs.mkdirSync(p, { recursive: true }); fs.accessSync(p, fs.constants.W_OK) }
+        catch (e) { need(false, 'not writable on the mac: ' + p + ' (' + e.message + ')') }
+      }
+      need(/^v22\./.test(process.version), 'node is ' + process.version + '; the harness was measured on v22.22.2')
+    }
+
+    if (stage === 'build') {
+      const j = ev('build')
+      need(typeof j.ms === 'number' && j.ms > 0, 'build.json .ms is not a positive number')
+      need(j.boundary && j.boundary.pathsRelativised === true, 'boundary.pathsRelativised !== true -- an origin-absolute path survived into the published surface')
+      need(j.boundary && j.boundary.publishedHasLever === false, 'boundary.publishedHasLever !== false -- the capture lever leaked into the published bundle')
+      need(j.boundary && j.boundary.captureHasLever === true, 'boundary.captureHasLever !== true -- the capture surface lost its lever')
+      need(j.ogCard && j.ogCard.controlRejected === 4, 'ogCard.controlRejected = ' + (j.ogCard && j.ogCard.controlRejected) + ' (want 4)')
+      need(j.css && j.css.bytes > 0, 'css.bytes is not positive')
+      need(j.publish && j.publish.bytes > 0, 'publish.bytes is not positive')
+      need(j.capture && j.capture.bytes > 0, 'capture.bytes is not positive')
+    }
+
+    if (stage === 'bands') {
+      const j = ev('bands')
+      need(j.canonical === true, 'bands.json .canonical !== true -- the band table is not the canonical measurement')
+      need(Array.isArray(j.candidates) && j.candidates.length >= 4, 'bands.json .candidates has fewer than 4 FFT-normalisation candidates')
+      const zero = Array.isArray(j.candidates) ? j.candidates.filter((c) => c.err === 0) : []
+      need(zero.length === 1, 'bands.json: expected exactly ONE zero-error normalisation candidate, got ' + zero.length + ' (the four candidates must be far apart)')
+      need(typeof j.ms === 'number' && j.ms > 0, 'bands.json .ms is not positive')
+    }
+
+    if (stage === 'capture') {
+      const j = ev('capture')
+      need(j.ok === true, 'capture.json .ok !== true')
+      need(j.canonical === true, 'capture.json .canonical !== true')
+      need(j.hud === 'off', "capture.json .hud = " + j.hud + " (want 'off' -- a faithful HUD paints the overlay into the captured frame)")
+      need(j.fps === 24, 'capture.json .fps = ' + j.fps + ' (want 24)')
+      need(j.audioDuration === 21.024, 'capture.json .audioDuration = ' + j.audioDuration + ' (want 21.024)')
+      need(j.frames && j.frames.start === 0 && j.frames.end === 504 && j.frames.count === 505,
+        'capture.json frames != 0..504 count 505: ' + JSON.stringify(j.frames))
+      need(j.distinctFrames === 505, 'capture.json .distinctFrames = ' + j.distinctFrames + ' (want 505 -- a repeated frame is a stalled clock)')
+      need(j.contentFrames && j.contentFrames.share >= 0.25,
+        'capture.json contentFrames.share = ' + (j.contentFrames && j.contentFrames.share) + ' -- below the 0.25 aggregate floor, i.e. the film is an empty grain field')
+      need(j.maxClockError === 0, 'capture.json .maxClockError = ' + j.maxClockError + ' -- the pinned clock drifted')
+      need(j.analyseCalls && j.analyseCalls.freq === 505 && j.analyseCalls.wave === 505,
+        'capture.json analyseCalls != 505/505: ' + JSON.stringify(j.analyseCalls))
+      need(Array.isArray(j.problems) && j.problems.length === 0, 'capture.json .problems non-empty: ' + JSON.stringify(j.problems))
+      need(Array.isArray(j.consoleErrors) && j.consoleErrors.length === 0, 'capture.json .consoleErrors non-empty')
+      need(typeof j.clockInitSha256 === 'string' && /^[0-9a-f]{64}$/.test(j.clockInitSha256), 'capture.json .clockInitSha256 is not a 64-hex digest')
+    }
+
+    if (stage === 'encode') {
+      const j = ev('encode')
+      need(j.ok === true, 'encode.json .ok !== true')
+      need(j.frames && j.frames.count === 505, 'encode.json frames.count != 505')
+      const x = j.encodes && j.encodes['ds5-film-x.mp4']
+      const hd = j.encodes && j.encodes['ds5-film-1080p.mp4']
+      need(!!x, 'encode.json has no ds5-film-x.mp4 entry')
+      need(!!hd, 'encode.json has no ds5-film-1080p.mp4 entry')
+      if (x) {
+        need(x.ok === true, 'the X cut .ok !== true')
+        need(x.controlRejected === 4, 'the X cut .controlRejected = ' + x.controlRejected + ' (want 4)')
+        need(x.video && x.video.codec === 'h264' && x.video.pixFmt === 'yuv420p', 'the X cut is not H.264/yuv420p')
+        need(x.video && x.video.w === 1280 && x.video.h === 720, 'the X cut is not 1280x720')
+        need(x.video && x.video.frames === 505 && x.video.fps === 24, 'the X cut is not 505 frames at 24 fps')
+        need(x.audio && x.audio.codec === 'aac' && x.audio.sampleRate === 48000 && x.audio.ch === 2, 'the X cut audio is not AAC 48 kHz stereo')
+        need(x.bytes > 0 && x.durationS > 21 && x.durationS < 21.2, 'the X cut bytes/duration is out of range: ' + x.bytes + ' / ' + x.durationS)
+      }
+      if (hd) {
+        need(hd.ok === true, 'the 1080p cut .ok !== true')
+        need(hd.controlRejected === 4, 'the 1080p cut .controlRejected = ' + hd.controlRejected + ' (want 4)')
+        need(hd.video && hd.video.w === 1920 && hd.video.h === 1080 && hd.video.frames === 505, 'the 1080p cut is not 1920x1080 with 505 frames')
+      }
+      need(Array.isArray(j.problems) && j.problems.length === 0, 'encode.json .problems non-empty')
+    }
+
+    if (stage === 'publish') {
+      const j = ev('publish')
+      need(j.ok === true, 'publish.json .ok !== true')
+      need(j.control && j.control.rejected === 4 && j.control.total === 4,
+        'publish.json control = ' + JSON.stringify(j.control) + ' (want 4 of 4 mutations rejected)')
+      need(Array.isArray(j.predicates) && j.predicates.length === 5, 'publish.json .predicates is not the 5-predicate set')
+      need(Array.isArray(j.problems) && j.problems.length === 0, 'publish.json .problems non-empty: ' + JSON.stringify(j.problems))
+      need(Array.isArray(j.dropped) && j.dropped.includes('__cap.html') && j.dropped.includes('__cap.js'),
+        'publish.json .dropped does not name both capture-machinery files: ' + JSON.stringify(j.dropped))
+      need(typeof j.fileCount === 'number' && j.fileCount >= 33, 'publish.json .fileCount = ' + j.fileCount + ' (want >= 33)')
+      need(typeof j.bytes === 'number' && j.bytes > 30000000, 'publish.json .bytes = ' + j.bytes + ' (want > 30000000)')
+      need(Array.isArray(j.required) && j.required.length === 6, 'publish.json .required is not the 6-file set')
+      need(fs.existsSync(path.join(ROOT, 'pages', 'index.html')), 'pages/index.html missing')
+      need(fs.existsSync(path.join(ROOT, 'pages', 'watch.html')), 'pages/watch.html missing')
+      need(fs.existsSync(path.join(ROOT, 'pages', 'workflow', 'ds5-film-render.yaml')),
+        'pages/workflow/ds5-film-render.yaml missing -- pages/WORKFLOW.md points the reader at it')
+
+      // The published lane must BE the lane that ran. publish.mjs copies it fresh on
+      // every run, so a mismatch here means the copy silently failed -- and a shareable
+      // artifact that diverges from the thing that produced the film is worse than no
+      // artifact, because a reader would reproduce a pipeline nobody executed.
+      const srcLane = path.join(ROOT, 'workflow', 'ds5-film-render.yaml')
+      const pubLane = path.join(ROOT, 'pages', 'workflow', 'ds5-film-render.yaml')
+      need(fs.existsSync(srcLane), 'workflow/ds5-film-render.yaml is missing at the project root')
+      if (fs.existsSync(srcLane) && fs.existsSync(pubLane)) {
+        const h = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex')
+        const a = h(srcLane)
+        const b = h(pubLane)
+        need(a === b,
+          'the published lane is NOT byte-identical to the source lane: ' + a.slice(0, 12) + ' != ' + b.slice(0, 12))
+      }
+    }
+
+    if (stage === 'verify') {
+      const j = ev('pages')
+      need(j.staged && j.staged.matchesTree === true, 'pages.json staged.matchesTree !== true -- the staged tree is not byte-identical to the published tree')
+      need(j.gate && j.gate.appeared === true, 'pages.json gate.appeared !== true')
+      need(j.gate && typeof j.gate.label === 'string' && /^Play/.test(j.gate.label), 'pages.json gate label is not the Play button: ' + (j.gate && j.gate.label))
+      need(j.film && j.film.started === true, 'pages.json film.started !== true')
+      need(j.film && j.film.gateDetached === true, 'pages.json film.gateDetached !== true')
+      need(j.film && j.film.canvases >= 3, 'pages.json film.canvases = ' + (j.film && j.film.canvases) + ' (want >= 3)')
+      need(j.film && j.film.brightFrac >= 0.001, 'pages.json film.brightFrac = ' + (j.film && j.film.brightFrac) + ' -- below the content floor')
+      need(j.http && j.http.notFoundHard === 0, 'pages.json http.notFoundHard = ' + (j.http && j.http.notFoundHard) + ' (a hard 404 on the published surface)')
+      need(j.http && j.http.consoleErrors === 0 && j.http.pageErrors === 0, 'pages.json console/page errors are non-zero')
+      need(j.assets && j.assets['film/ds5-film-x.mp4'] === 200, 'pages.json assets: the X cut did not serve 200')
+      need(j.assets && j.assets['film/ds5-film-1080p.mp4'] === 200, 'pages.json assets: the 1080p cut did not serve 200')
+      need(j.assets && j.assets['audio/ds5-film-bed.mp3'] === 200, 'pages.json assets: the audio did not serve 200')
+    }
+
+    if (fails.length) {
+      for (const f of fails) console.log('FAIL ' + stage + ': ' + f)
+      console.log('ASSERT FAILED ' + stage + ' (' + fails.length + ' problem(s))')
+      process.exit(1)
+    }
+    console.log(stage.toUpperCase() + ' OK')
+    ASSERTEOF
+
+    # Then run it, on the Mac, where the evidence is. A pipe reports the LAST
+    # command's status, so the marker is re-checked locally after it arrives -- that
+    # is what proves the assertion really ran rather than being assumed.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "'$NODE_BIN' '$LANE_DIR/assert.mjs' preflight" \
+      | tee "$ARTIFACTS_DIR/preflight.txt" || true
+    grep -q '^PREFLIGHT OK' "$ARTIFACTS_DIR/preflight.txt" \
+      || { echo "PREFLIGHT FAIL: the evidence assertion did not pass (see preflight.txt above)"; exit 1; }
+    echo "PREFLIGHT OK"
+  timeout: 300000
+
+- id: build
+  depends_on: [preflight]
+  bash: |
+    set -euo pipefail
+    MAC=$(cat "$ARTIFACTS_DIR/mac.txt")
+    ROOT=$(cat "$ARTIFACTS_DIR/root.txt")
+    NODE_BIN=$(cat "$ARTIFACTS_DIR/node.txt")
+    LANE_DIR=$(cat "$ARTIFACTS_DIR/lane_dir.txt")
+
+    echo "== BUILD =="
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" 'echo MAC_BRIDGE_OK' \
+      | awk '$0=="MAC_BRIDGE_OK"{f=1} END{exit(f?0:1)}' \
+      || { echo "BUILD FAIL: mac bridge unreachable"; exit 1; }
+
+    # rm first: a stale evidence file would let a FAILED stage pass. See the header.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "rm -f '$ROOT/evidence/build.json'"
+
+    # The stage runs ON THE MAC. Its output is captured on the Dell so the artifact
+    # dir carries the real log rather than a summary of it. `|| true` because a
+    # non-zero stage must still print its log before the lane decides.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cd '$ROOT' && '$NODE_BIN' harness/build.mjs" \
+      > "$ARTIFACTS_DIR/build.log" 2>&1 || true
+    tail -25 "$ARTIFACTS_DIR/build.log"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "'$NODE_BIN' '$LANE_DIR/assert.mjs' build" \
+      | tee "$ARTIFACTS_DIR/build.txt" || true
+    grep -q '^BUILD OK' "$ARTIFACTS_DIR/build.txt" \
+      || { echo "BUILD FAIL: the evidence assertion did not pass (see build.txt above)"; exit 1; }
+    echo "BUILD OK"
+  timeout: 300000
+
+- id: bands
+  depends_on: [build]
+  bash: |
+    set -euo pipefail
+    MAC=$(cat "$ARTIFACTS_DIR/mac.txt")
+    ROOT=$(cat "$ARTIFACTS_DIR/root.txt")
+    NODE_BIN=$(cat "$ARTIFACTS_DIR/node.txt")
+    LANE_DIR=$(cat "$ARTIFACTS_DIR/lane_dir.txt")
+
+    echo "== BANDS =="
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" 'echo MAC_BRIDGE_OK' \
+      | awk '$0=="MAC_BRIDGE_OK"{f=1} END{exit(f?0:1)}' \
+      || { echo "BANDS FAIL: mac bridge unreachable"; exit 1; }
+
+    # rm first: a stale evidence file would let a FAILED stage pass. See the header.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "rm -f '$ROOT/evidence/bands.json'"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cd '$ROOT' && '$NODE_BIN' harness/bands.mjs" \
+      > "$ARTIFACTS_DIR/bands.log" 2>&1 || true
+    tail -25 "$ARTIFACTS_DIR/bands.log"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "'$NODE_BIN' '$LANE_DIR/assert.mjs' bands" \
+      | tee "$ARTIFACTS_DIR/bands.txt" || true
+    grep -q '^BANDS OK' "$ARTIFACTS_DIR/bands.txt" \
+      || { echo "BANDS FAIL: the evidence assertion did not pass (see bands.txt above)"; exit 1; }
+    echo "BANDS OK"
+  timeout: 300000
+
+- id: capture
+  depends_on: [bands]
+  bash: |
+    set -euo pipefail
+    MAC=$(cat "$ARTIFACTS_DIR/mac.txt")
+    ROOT=$(cat "$ARTIFACTS_DIR/root.txt")
+    NODE_BIN=$(cat "$ARTIFACTS_DIR/node.txt")
+    LANE_DIR=$(cat "$ARTIFACTS_DIR/lane_dir.txt")
+
+    echo "== CAPTURE =="
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" 'echo MAC_BRIDGE_OK' \
+      | awk '$0=="MAC_BRIDGE_OK"{f=1} END{exit(f?0:1)}' \
+      || { echo "CAPTURE FAIL: mac bridge unreachable"; exit 1; }
+
+    # rm first: a stale evidence file would let a FAILED stage pass. See the header.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "rm -f '$ROOT/evidence/capture.json'"
+
+    # 505 frames through a pinned virtual clock: ~158.5 s measured, so the node
+    # timeout below is ~5x that. This is the only slow stage.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cd '$ROOT' && '$NODE_BIN' harness/capture.mjs" \
+      > "$ARTIFACTS_DIR/capture.log" 2>&1 || true
+    tail -25 "$ARTIFACTS_DIR/capture.log"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "'$NODE_BIN' '$LANE_DIR/assert.mjs' capture" \
+      | tee "$ARTIFACTS_DIR/capture.txt" || true
+    grep -q '^CAPTURE OK' "$ARTIFACTS_DIR/capture.txt" \
+      || { echo "CAPTURE FAIL: the evidence assertion did not pass (see capture.txt above)"; exit 1; }
+    echo "CAPTURE OK"
+  timeout: 900000
+
+- id: encode
+  depends_on: [capture]
+  bash: |
+    set -euo pipefail
+    MAC=$(cat "$ARTIFACTS_DIR/mac.txt")
+    ROOT=$(cat "$ARTIFACTS_DIR/root.txt")
+    NODE_BIN=$(cat "$ARTIFACTS_DIR/node.txt")
+    LANE_DIR=$(cat "$ARTIFACTS_DIR/lane_dir.txt")
+
+    echo "== ENCODE =="
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" 'echo MAC_BRIDGE_OK' \
+      | awk '$0=="MAC_BRIDGE_OK"{f=1} END{exit(f?0:1)}' \
+      || { echo "ENCODE FAIL: mac bridge unreachable"; exit 1; }
+
+    # rm first: a stale evidence file would let a FAILED stage pass. See the header.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "rm -f '$ROOT/evidence/encode.json'"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cd '$ROOT' && '$NODE_BIN' harness/encode.mjs" \
+      > "$ARTIFACTS_DIR/encode.log" 2>&1 || true
+    tail -25 "$ARTIFACTS_DIR/encode.log"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "'$NODE_BIN' '$LANE_DIR/assert.mjs' encode" \
+      | tee "$ARTIFACTS_DIR/encode.txt" || true
+    grep -q '^ENCODE OK' "$ARTIFACTS_DIR/encode.txt" \
+      || { echo "ENCODE FAIL: the evidence assertion did not pass (see encode.txt above)"; exit 1; }
+    echo "ENCODE OK"
+  timeout: 600000
+
+- id: publish
+  depends_on: [encode]
+  bash: |
+    set -euo pipefail
+    MAC=$(cat "$ARTIFACTS_DIR/mac.txt")
+    ROOT=$(cat "$ARTIFACTS_DIR/root.txt")
+    NODE_BIN=$(cat "$ARTIFACTS_DIR/node.txt")
+    LANE_DIR=$(cat "$ARTIFACTS_DIR/lane_dir.txt")
+
+    echo "== PUBLISH =="
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" 'echo MAC_BRIDGE_OK' \
+      | awk '$0=="MAC_BRIDGE_OK"{f=1} END{exit(f?0:1)}' \
+      || { echo "PUBLISH FAIL: mac bridge unreachable"; exit 1; }
+
+    # rm first: a stale evidence file would let a FAILED stage pass. See the header.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "rm -f '$ROOT/evidence/publish.json'"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cd '$ROOT' && '$NODE_BIN' harness/publish.mjs" \
+      > "$ARTIFACTS_DIR/publish.log" 2>&1 || true
+    tail -25 "$ARTIFACTS_DIR/publish.log"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "'$NODE_BIN' '$LANE_DIR/assert.mjs' publish" \
+      | tee "$ARTIFACTS_DIR/publish.txt" || true
+    grep -q '^PUBLISH OK' "$ARTIFACTS_DIR/publish.txt" \
+      || { echo "PUBLISH FAIL: the evidence assertion did not pass (see publish.txt above)"; exit 1; }
+    echo "PUBLISH OK"
+  timeout: 300000
+
+- id: verify
+  depends_on: [publish]
+  bash: |
+    set -euo pipefail
+    MAC=$(cat "$ARTIFACTS_DIR/mac.txt")
+    ROOT=$(cat "$ARTIFACTS_DIR/root.txt")
+    NODE_BIN=$(cat "$ARTIFACTS_DIR/node.txt")
+    LANE_DIR=$(cat "$ARTIFACTS_DIR/lane_dir.txt")
+
+    echo "== VERIFY =="
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" 'echo MAC_BRIDGE_OK' \
+      | awk '$0=="MAC_BRIDGE_OK"{f=1} END{exit(f?0:1)}' \
+      || { echo "VERIFY FAIL: mac bridge unreachable"; exit 1; }
+
+    # rm first: a stale evidence file would let a FAILED stage pass. See the header.
+    # NOTE: the name is `pages`, not `verify` -- that is what verify-pages.mjs writes.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "rm -f '$ROOT/evidence/pages.json'"
+
+    # The published tree is served from a directory whose NAME IS THE REPO NAME, one
+    # level above it, so an origin-absolute path fails exactly as it would on
+    # https://<user>.github.io/<repo>/. That failure cannot be seen locally with a
+    # server rooted at the repo, which is the whole point of this stage.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cd '$ROOT' && '$NODE_BIN' harness/verify-pages.mjs" \
+      > "$ARTIFACTS_DIR/verify.log" 2>&1 || true
+    tail -25 "$ARTIFACTS_DIR/verify.log"
+
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "'$NODE_BIN' '$LANE_DIR/assert.mjs' verify" \
+      | tee "$ARTIFACTS_DIR/verify.txt" || true
+    grep -q '^VERIFY OK' "$ARTIFACTS_DIR/verify.txt" \
+      || { echo "VERIFY FAIL: the evidence assertion did not pass (see verify.txt above)"; exit 1; }
+    echo "VERIFY OK"
+  timeout: 600000
+
+- id: receipt
+  depends_on: [verify]
+  bash: |
+    set -euo pipefail
+    MAC=$(cat "$ARTIFACTS_DIR/mac.txt")
+    ROOT=$(cat "$ARTIFACTS_DIR/root.txt")
+
+    echo "== RECEIPT =="
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" 'echo MAC_BRIDGE_OK' \
+      | awk '$0=="MAC_BRIDGE_OK"{f=1} END{exit(f?0:1)}' \
+      || { echo "RECEIPT FAIL: mac bridge unreachable"; exit 1; }
+
+    # Real bytes, measured on the Mac, ferried back across the bridge. The receipt is
+    # therefore a statement about real files, not a restatement of the lane's own
+    # claims -- which is the difference between a receipt and a summary.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "
+      cd '$ROOT' || exit 1
+      echo FILM_X_SHA;     /usr/bin/shasum -a 256 out/ds5-film-x.mp4    | awk '{print \$1}'
+      echo FILM_X_BYTES;   /usr/bin/stat -f %z out/ds5-film-x.mp4
+      echo FILM_HD_SHA;    /usr/bin/shasum -a 256 out/ds5-film-1080p.mp4 | awk '{print \$1}'
+      echo FILM_HD_BYTES;  /usr/bin/stat -f %z out/ds5-film-1080p.mp4
+      echo FRAMES;         /usr/bin/find frames -type f -name 'f*.png' | wc -l | tr -d ' '
+      echo PAGES_FILES;    /usr/bin/find pages -type f | wc -l | tr -d ' '
+      echo PAGES_BYTES;    /usr/bin/find pages -type f -print0 | xargs -0 /usr/bin/stat -f %z | awk '{s+=\$1} END{print s}'
+      echo LANE_SHA;       /usr/bin/shasum -a 256 workflow/ds5-film-render.yaml | awk '{print \$1}'
+      echo CLOCK_SHA;      /usr/bin/shasum -a 256 harness/clock-init.js | awk '{print \$1}'
+    " > "$ARTIFACTS_DIR/receipt-facts.txt" 2>&1 || true
+    cat "$ARTIFACTS_DIR/receipt-facts.txt"
+
+    FACT() { awk -v k="$1" '$0==k{getline; print; exit}' "$ARTIFACTS_DIR/receipt-facts.txt"; }
+
+    {
+      echo "# DS5 film render -- receipt"
+      echo
+      echo "VERDICT: PASS"
+      echo
+      echo "Lane \`ds5-film-render-v1\`, run at $(date -u +%Y-%m-%dT%H:%M:%SZ)."
+      echo "Rendered ON THE MAC, through the Dell's \`Host adam-macbook\` bridge."
+      echo "Project root: \`$ROOT\`."
+      echo
+      echo "## The film"
+      echo
+      echo "| artifact | bytes | sha256 |"
+      echo "| --- | ---: | --- |"
+      echo "| \`out/ds5-film-1080p.mp4\` | $(FACT FILM_HD_BYTES) | \`$(FACT FILM_HD_SHA)\` |"
+      echo "| \`out/ds5-film-x.mp4\` | $(FACT FILM_X_BYTES) | \`$(FACT FILM_X_SHA)\` |"
+      echo
+      echo "## The published tree"
+      echo
+      echo "- files: $(FACT PAGES_FILES)"
+      echo "- bytes: $(FACT PAGES_BYTES)"
+      echo "- frames rendered: $(FACT FRAMES)"
+      echo "- lane as shipped: \`workflow/ds5-film-render.yaml\`, sha256 \`$(FACT LANE_SHA)\`"
+      echo "- \`harness/clock-init.js\`, sha256 \`$(FACT CLOCK_SHA)\`"
+      echo
+      echo "## What was asserted, and why each one is not an exit code"
+      echo
+      echo "| stage | the recorded fact it had to satisfy |"
+      echo "| --- | --- |"
+      echo "| build | \`boundary.pathsRelativised\`, \`publishedHasLever === false\`, \`captureHasLever === true\`, \`ogCard.controlRejected === 4\` |"
+      echo "| bands | \`canonical === true\`, and exactly ONE zero-error FFT normalisation candidate of four |"
+      echo "| capture | 505 frames / 505 distinct / \`contentFrames.share >= 0.25\` / \`maxClockError === 0\` / \`hud === 'off'\` / \`analyseCalls 505/505\` |"
+      echo "| encode | both cuts \`ok\`, each \`controlRejected === 4\`, H.264/yuv420p, 505 frames, AAC 48 kHz stereo |"
+      echo "| publish | \`control 4/4\`, 5 predicates, both \`__cap\` files dropped, \`problems\` empty |"
+      echo "| verify | \`staged.matchesTree\`, gate appeared, film started and detached, \`notFoundHard === 0\`, all three assets 200 |"
+      echo
+      echo "The content floor is the one that matters. This pipeline has already produced"
+      echo "a 505-frame run that was an empty grain field with every gate green -- a"
+      echo "millisecond/second unit mismatch at the \`clock-init\` boundary -- so frame"
+      echo "*count* is not evidence that a film exists. \`contentFrames.share\` is: it"
+      echo "measures the fraction of frames carrying any content at all."
+    } > "$ARTIFACTS_DIR/RECEIPT.md"
+
+    grep -q '^VERDICT: PASS' "$ARTIFACTS_DIR/RECEIPT.md" \
+      || { echo "RECEIPT FAIL: receipt does not say VERDICT: PASS"; exit 1; }
+    echo "RECEIPT OK" | tee "$ARTIFACTS_DIR/receipt.txt"
+    echo "receipt -> $ARTIFACTS_DIR/RECEIPT.md"
+  timeout: 300000
