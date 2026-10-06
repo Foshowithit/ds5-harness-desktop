@@ -2,7 +2,7 @@
 
 A 21-second deterministic motion-graphics promo film, plus the pipeline that renders it.
 
-**Live:** https://adamnorm4wd.github.io/ds5-harness-desktop/ (interactive film)
+**Live:** https://foshowithit.github.io/ds5-harness-desktop/ (interactive film)
 &middot; [watch the MP4](watch.html)
 
 ## What this is
