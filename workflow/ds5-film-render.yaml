@@ -83,9 +83,19 @@
 #     (measured 2026-10-06 -- the gate fired its own declared 'chromium unresolvable'
 #     failure on a healthy tree, and 7 downstream nodes were skipped for it).
 #   * ROOT = '/tmp/ds5-render', four times.
-# To port it, repoint those constants or reproduce the environment. FILM_MAC and
-# FILM_ROOT (or `MAC=`/`ROOT=` on the task string) override the two values this lane
-# itself owns.
+# To port it, repoint those constants or reproduce the environment. FIVE of them are
+# levers rather than literals, each with the SAME two-sided form -- an env var and a
+# space-free `KEY=` token on the task string:
+#
+#     MAC       FILM_MAC        ROOT     FILM_ROOT
+#     NODE_BIN  FILM_NODE       DEP_WS   FILM_DEP_WS      SRC_WS  FILM_SRC_WS
+#
+# LANE_DIR is deliberately NOT a lever. assert.mjs hardcodes
+# `const LANE = '/tmp/ds5-lane'`, so overriding LANE_DIR would silently split the
+# lane's scratch directory from the directory its own assertion helper reads. A lever
+# that cannot act is worse than no lever, so it stays a literal and this line says why.
+# Every default below is the literal that was previously hard-wired: a run that passes
+# no override behaves EXACTLY as before. That is asserted by control A, not assumed.
 #
 # WHAT IT REFUSES TO DO, LEARNED THE HARD WAY. It never treats an exit code as
 # evidence. `exit 0` from a Node stage is a statement about that process, not about
@@ -154,9 +164,13 @@ nodes:
     v=$(kv MAC);  [ -n "$v" ] && MAC="$v"
     v=$(kv ROOT); [ -n "$v" ] && ROOT="$v"
 
-    NODE_BIN="/Users/adam26/.workbuddy-ai/binaries/node/versions/22.22.2-3/bin/node"
-    DEP_WS="/Users/adam26/.workbuddy-ai/binaries/node/workspace"
-    SRC_WS="/Users/adam26/Downloads/workspace-36152170-e6b2-41b1-a251-36d6216e50d3 (1)"
+    NODE_BIN="${FILM_NODE:-/Users/adam26/.workbuddy-ai/binaries/node/versions/22.22.2-3/bin/node}"
+    DEP_WS="${FILM_DEP_WS:-/Users/adam26/.workbuddy-ai/binaries/node/workspace}"
+    SRC_WS="${FILM_SRC_WS:-/Users/adam26/Downloads/workspace-36152170-e6b2-41b1-a251-36d6216e50d3 (1)}"
+    v=$(kv NODE_BIN); [ -n "$v" ] && NODE_BIN="$v"
+    v=$(kv DEP_WS);   [ -n "$v" ] && DEP_WS="$v"
+    v=$(kv SRC_WS);   [ -n "$v" ] && SRC_WS="$v"
+    # NOT a lever, on purpose: assert.mjs pins `const LANE = '/tmp/ds5-lane'`.
     LANE_DIR="/tmp/ds5-lane"
 
     echo "== PREFLIGHT =="

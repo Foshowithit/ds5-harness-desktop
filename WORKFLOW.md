@@ -128,9 +128,34 @@ The lane is [`workflow/ds5-film-render.yaml`](workflow/ds5-film-render.yaml). It
 be killed by an unhealthy model provider. Every one of its nodes is an `ssh` hop, because
 the render runs on a Mac while the workflow engine runs on a Linux host.
 
-It drives the harness **in place** rather than relocating it: `build.mjs`, `bands.mjs`
-and `capture.mjs` each pin `/tmp/ds5-render` as a constant, and the first two have no
-argument parser at all, so there is nothing to point elsewhere.
+Its environment is **five two-sided levers**, not constants. Each one has an
+environment variable and a space-free `KEY=` token on the task string. The lane's own
+header is canonical for this list; it is mapped here so the lane need not be opened to
+learn what can be aimed:
+
+```
+MAC       FILM_MAC        the ssh alias the render runs on
+ROOT      FILM_ROOT       the scratch tree on that machine
+NODE_BIN  FILM_NODE       the Node binary the harness is run with
+DEP_WS    FILM_DEP_WS     the shared node_modules the harness resolves from
+SRC_WS    FILM_SRC_WS     the film source tree
+```
+
+Every default is the literal that was previously hard-wired, so a run that passes no
+override behaves exactly as before. `SRC_WS`'s default contains a space, which the
+`KEY=` form cannot express — it is reachable by environment variable only.
+
+`LANE_DIR` is deliberately **not** a lever. `assert.mjs` hardcodes
+`const LANE = '/tmp/ds5-lane'`, so overriding the lane's scratch directory would
+silently split it from the directory its own assertion helper reads. A lever that
+cannot act is worse than no lever.
+
+That makes the lane **configurable, not yet relocatable**: the lane's own constants
+are levers, but the Mac-side scripts it drives still resolve their environment
+absolutely — `build.mjs` and `og-card.mjs` each hardcode the same Node binary path,
+and the dependency workspace is resolved by `createRequire` in six separate files
+rather than from one place. A second operator on another machine must still reproduce
+that environment.
 
 Every stage asserts the **recorded evidence** in `evidence/*.json`, never an exit code. A
 stage that exits 0 having produced nothing still fails — which is exactly the failure
