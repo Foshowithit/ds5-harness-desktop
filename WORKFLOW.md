@@ -11,7 +11,7 @@ harness/build.mjs      -> dist/bundle.js      (published surface)
         |
 harness/bands.mjs      -> harness/bands.bin   (measured spectral-flux onsets)
         |
-harness/capture.mjs    -> frames/f0000..f0504.png + evidence/capture.json
+harness/capture.mjs    -> frames/f0000..f0503.png + evidence/capture.json
         |
 harness/encode.mjs     -> out/ds5-film-1080p.mp4, out/ds5-film-x.mp4 + evidence/encode.json
         |
@@ -39,7 +39,7 @@ build silently stops emitting the handle.
 
 `node harness/bands.mjs`
 
-Reads `audio/ds5-film-bed.mp3` and writes `harness/bands.bin` (387,840 B): the
+Reads `audio/ds5-film-bed.mp3` and writes `harness/bands.bin` (387,072 B): the
 per-frame spectral-flux envelope the scenes are cut against. The film does not use a
 hand-written cue sheet; the cut points are measured off the audio.
 
@@ -47,7 +47,7 @@ hand-written cue sheet; the cut points are measured off the audio.
 
 `node harness/capture.mjs`
 
-Renders 505 frames over the Chrome DevTools Protocol. Three things here are load-bearing:
+Renders 504 frames over the Chrome DevTools Protocol. Three things here are load-bearing:
 
 1. **`--autoplay-policy=no-user-gesture-required`.** Without it `el.play()` is
    rejected, and the blocked-audio path force-lights the player HUD, making
@@ -80,19 +80,26 @@ render's `f0003`), which is why the fence is aggregate.
    ship as a silently truncated film.
 2. Encodes a CRF 16 1080p master and a CRF 20 720p social cut with `+faststart`.
 3. **Probes and asserts** codec, pixel format, dimensions, frame rate, frame count,
-   audio presence and duration — then mutates the probe result four ways
-   (wrong pixel format, wrong fps, audio removed, duration halved) and fails if the
-   assertion accepts any of them.
+   audio presence and duration — then mutates the probe result five ways
+   (wrong pixel format, wrong fps, audio removed, duration halved, duration shifted
+   by 1.5 frames) and fails if the assertion accepts any of them.
 
 ## Stage 5 — publish
 
 `node harness/publish.mjs`
 
-Assembles the published tree from an **allowlist** and gates it with five independent
+Assembles the published tree from an **allowlist** and gates it with six independent
 predicates: no capture machinery by filename, none by content, required assets
-present, no origin-absolute asset paths, and every `index.html` reference resolving
-to a real file. It then mutates the finished tree four ways and fails if any mutation
-survives.
+present, no origin-absolute asset paths, every `index.html` reference resolving
+to a real file, and absolute social-card URLs. It then mutates the finished tree
+five ways and fails if any mutation survives.
+
+Predicate 6 exists because a *relative* `og:image` is dropped by every crawler that
+matters — X, Slack, Discord, iMessage render the link as a bare title with no card.
+`build.mjs` emits the relative tag on purpose (a tree may be served from any root);
+`publish.mjs` rewrites it to absolute for the known repo, and predicate 6 stops that
+from being silently reverted. Measured 2026-10-06: the absolute URLs lived only as a
+hand-edit in the deployed repo, so every publish reverted them and nothing noticed.
 
 Predicate 4 exists because a GitHub Pages *project* site is served from
 `https://<user>.github.io/<repo>/`. An origin-absolute `/bundle.js` resolves to the

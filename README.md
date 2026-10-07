@@ -13,7 +13,7 @@ driven by a pinned virtual clock, then encoded with ffmpeg.
 
 | | |
 |---|---|
-| Runtime | 21.024 s (505 frames @ 24 fps) |
+| Runtime | 21.000 s (504 frames @ 24 fps) |
 | Master | `film/ds5-film-1080p.mp4` — 1920x1080, H.264 High, CRF 16, AAC 48 kHz |
 | For social | `film/ds5-film-x.mp4` — 1280x720, CRF 20, faststart |
 | Score | `audio/ds5-film-bed.mp3` |
@@ -33,7 +33,7 @@ Five stages, each a single script with a gate, documented step by step in
 ```bash
 node harness/build.mjs     # source tree -> dist/ (published + capture surfaces)
 node harness/bands.mjs     # measure the score's onsets -> bands.bin
-node harness/capture.mjs   # headless Chrome, pinned clock -> frames/f0000..f0504.png
+node harness/capture.mjs   # headless Chrome, pinned clock -> frames/f0000..f0503.png
 node harness/encode.mjs    # frames + audio -> out/*.mp4, with a probe gate
 node harness/publish.mjs   # dist/ -> the published tree, with a boundary gate
 ```
@@ -50,7 +50,7 @@ its exit code, so a stage that exits 0 having produced nothing still fails.
 Every stage carries a gate that has been *seen to fail*. The render gate refuses a
 frame sequence that carries no content (a regression that once shipped 505 frames of
 empty grain while every other check passed); the encode gate refuses a file whose
-probe cannot reject four known-bad mutations; the publish gate refuses to ship the
+probe cannot reject five known-bad mutations; the publish gate refuses to ship the
 capture bundle. `WORKFLOW.md` names each one and the defect it caught.
 
 ## Licence

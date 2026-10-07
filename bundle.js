@@ -13268,13 +13268,13 @@ var require_react_dom_client_production = __commonJS({
       null !== formInst && 5 === formInst.tag && "form" === formInst.type ? requestFormReset$1(formInst) : previousDispatcher.r(form);
     }
     var globalDocument = "undefined" === typeof document ? null : document;
-    function preconnectAs(rel6, href, crossOrigin) {
+    function preconnectAs(rel7, href, crossOrigin) {
       var ownerDocument = globalDocument;
       if (ownerDocument && "string" === typeof href && href) {
         var limitedEscapedHref = escapeSelectorAttributeValueInsideDoubleQuotes(href);
-        limitedEscapedHref = 'link[rel="' + rel6 + '"][href="' + limitedEscapedHref + '"]';
+        limitedEscapedHref = 'link[rel="' + rel7 + '"][href="' + limitedEscapedHref + '"]';
         "string" === typeof crossOrigin && (limitedEscapedHref += '[crossorigin="' + crossOrigin + '"]');
-        preconnectsSet.has(limitedEscapedHref) || (preconnectsSet.add(limitedEscapedHref), rel6 = { rel: rel6, crossOrigin, href }, null === ownerDocument.querySelector(limitedEscapedHref) && (href = ownerDocument.createElement("link"), setInitialProperties(href, "link", rel6), markNodeAsHoistable(href), ownerDocument.head.appendChild(href)));
+        preconnectsSet.has(limitedEscapedHref) || (preconnectsSet.add(limitedEscapedHref), rel7 = { rel: rel7, crossOrigin, href }, null === ownerDocument.querySelector(limitedEscapedHref) && (href = ownerDocument.createElement("link"), setInitialProperties(href, "link", rel7), markNodeAsHoistable(href), ownerDocument.head.appendChild(href)));
       }
     }
     function prefetchDNS(href) {
@@ -23288,7 +23288,7 @@ var motion = /* @__PURE__ */ createMotionProxy(featureBundle, createDomVisualEle
 
 // app/lib/promo/timeline.ts
 var AUDIO_SRC = "audio/ds5-film-bed.mp3";
-var AUDIO_DURATION = 21.024;
+var AUDIO_DURATION = 21;
 var SCENES = [
   { id: "leader", index: "01", label: "LEADER", start: 0, end: 0.9 },
   { id: "boot", index: "02", label: "BOOT SEQUENCE", start: 0.9, end: 2.39 },
@@ -23302,6 +23302,10 @@ var SCENES = [
 ];
 var DROP_TIME = 8.42;
 var FPS = 24;
+var REVEAL_LEAD = 1 / FPS;
+function reveal(sceneStart, absTime) {
+  return absTime - sceneStart - REVEAL_LEAD;
+}
 function sceneIndexAt(t) {
   for (let i = SCENES.length - 1; i >= 0; i--) {
     if (t >= SCENES[i].start) return i;
@@ -24999,7 +25003,7 @@ var CUTOUTS = "M11.58 18.168c-2.088-1.642-3.101-2.183-3.52-2.16-.39.024-.32.472-
 var FULL = `${BODY}${CUTOUTS}`;
 function WhaleMark({
   size = 120,
-  reveal = "none",
+  reveal: reveal2 = "none",
   delay: delay2 = 0,
   className = "",
   glow = false,
@@ -25007,7 +25011,7 @@ function WhaleMark({
 }) {
   const style = glow ? { filter: "drop-shadow(0 0 24px rgba(77,107,254,0.55))" } : void 0;
   const common = { viewBox: "0 0 24 24", width: size, height: size, className, style, "aria-hidden": true };
-  if (reveal === "wipe") {
+  if (reveal2 === "wipe") {
     return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
       motion.svg,
       {
@@ -25019,7 +25023,7 @@ function WhaleMark({
       }
     );
   }
-  if (reveal === "draw") {
+  if (reveal2 === "draw") {
     return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(motion.svg, { ...common, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
       motion.path,
       {
@@ -25273,7 +25277,7 @@ function Scene({
       initial: { opacity: 0 },
       animate: { opacity: 1 },
       exit: { opacity: 0, scale: exitScale, filter: "blur(4px)" },
-      transition: { duration: 0.22, ease: EASE },
+      transition: { delay: -REVEAL_LEAD, duration: 0.22, ease: EASE },
       children: [
         numeral ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
           motion.span,
@@ -25282,7 +25286,7 @@ function Scene({
             className: `type-outline-soft pointer-events-none absolute z-0 select-none font-display text-[38vh] font-black leading-none ${numeralClass}`,
             initial: { opacity: 0, y: 24 },
             animate: { opacity: 1, y: 0 },
-            transition: { delay: 0.12, duration: 0.9, ease: EASE },
+            transition: { delay: 0.12 - REVEAL_LEAD, duration: 0.9, ease: EASE },
             children: numeral
           }
         ) : null,
@@ -25298,7 +25302,7 @@ function Marginalia({ children, className = "" }) {
       className: `pointer-events-none absolute z-20 font-mono text-[9px] uppercase tracking-[0.3em] text-bone/35 ${className}`,
       initial: { opacity: 0 },
       animate: { opacity: 1 },
-      transition: { delay: 0.3, duration: 0.6 },
+      transition: { delay: 0.3 - REVEAL_LEAD, duration: 0.6 },
       children
     }
   );
@@ -25316,7 +25320,7 @@ function LeaderScene() {
           className: "anim-spin-slow absolute",
           initial: { opacity: 0, scale: 0.92 },
           animate: { opacity: 1, scale: 1 },
-          transition: { duration: 0.5 },
+          transition: { delay: -REVEAL_LEAD, duration: 0.5 },
           style: { animationDuration: "2.4s" },
           children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("svg", { width: "340", height: "340", viewBox: "0 0 340 340", "aria-hidden": "true", children: [
             /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { cx: "170", cy: "170", r: "158", fill: "none", stroke: "rgba(244,245,247,0.16)", strokeWidth: "1" }),
@@ -25354,7 +25358,7 @@ function LeaderScene() {
             className: "block font-display text-[112px] font-black leading-none type-wide tabular",
             initial: { opacity: 0, rotate: -8, scale: 0.85 },
             animate: { opacity: 1, rotate: 0, scale: 1 },
-            transition: { duration: 0.3, ease: [0.83, 0, 0.17, 1] },
+            transition: { delay: -REVEAL_LEAD, duration: 0.3, ease: [0.83, 0, 0.17, 1] },
             children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "text-volt", children: "\xD7" })
           }
         ),
@@ -25364,23 +25368,23 @@ function LeaderScene() {
             className: "mt-1 block font-mono text-[9px] tracking-[0.42em] text-bone/50",
             initial: { opacity: 0 },
             animate: { opacity: 1 },
-            transition: { delay: 0.12, duration: 0.3 },
+            transition: { delay: 0.12 - REVEAL_LEAD, duration: 0.3 },
             children: "DEEPSEEK \xD7 RCOS"
           }
         )
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(motion.div, { className: "absolute left-5 top-[calc(8vh+16px)] font-mono text-[9px] uppercase tracking-[0.3em] text-bone/40", initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.1 }, children: "HARNESS DESKTOP" }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(motion.div, { className: "absolute right-5 top-[calc(8vh+16px)] font-mono text-[9px] uppercase tracking-[0.3em] text-bone/40", initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.18 }, children: "SOUND ON" }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(motion.div, { className: "absolute bottom-[calc(8vh+16px)] left-5 font-mono text-[9px] uppercase tracking-[0.3em] text-bone/40", initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.26 }, children: "DS5 FILM BED" }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(motion.div, { className: "absolute bottom-[calc(8vh+16px)] right-5 font-mono text-[9px] uppercase tracking-[0.3em] text-volt", initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.34 }, children: "DEEPSEEK" }),
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(motion.div, { className: "absolute left-5 top-[calc(8vh+16px)] font-mono text-[9px] uppercase tracking-[0.3em] text-bone/40", initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.1 - REVEAL_LEAD }, children: "HARNESS DESKTOP" }),
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(motion.div, { className: "absolute right-5 top-[calc(8vh+16px)] font-mono text-[9px] uppercase tracking-[0.3em] text-bone/40", initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.18 - REVEAL_LEAD }, children: "SOUND ON" }),
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(motion.div, { className: "absolute bottom-[calc(8vh+16px)] left-5 font-mono text-[9px] uppercase tracking-[0.3em] text-bone/40", initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.26 - REVEAL_LEAD }, children: "DS5 FILM BED" }),
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(motion.div, { className: "absolute bottom-[calc(8vh+16px)] right-5 font-mono text-[9px] uppercase tracking-[0.3em] text-volt", initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.34 - REVEAL_LEAD }, children: "DEEPSEEK" }),
     /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
       motion.div,
       {
         className: "pointer-events-none absolute inset-0 bg-bone",
         initial: { opacity: 0 },
         animate: { opacity: [0, 0.85, 0] },
-        transition: { delay: blink, duration: 0.12, times: [0, 0.3, 1], ease: "linear" }
+        transition: { delay: blink - REVEAL_LEAD, duration: 0.12, times: [0, 0.3, 1], ease: "linear" }
       }
     )
   ] });
@@ -25390,7 +25394,7 @@ function LeaderScene() {
 var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
 var START = SCENES[1].start;
 function rel(t) {
-  return t - START;
+  return reveal(START, t);
 }
 var LINES = [
   { at: HITS.boot[0], cmd: true, text: "rcos link --target deepseek/harness" },
@@ -25422,7 +25426,7 @@ function BootScene() {
           className: `flex items-baseline gap-2 ${line.cmd ? "text-bone" : "text-bone/70"}`,
           initial: { opacity: 0 },
           animate: { opacity: 1 },
-          transition: { delay: rel(line.at) - 0.02, duration: 0.12 },
+          transition: { delay: rel(line.at), duration: 0.12 },
           children: [
             line.cmd ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "text-volt", children: "\u276F" }) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "text-bone/30", children: "\xB7" }),
             /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
@@ -25461,7 +25465,7 @@ function BootScene() {
 // app/components/promo/scenes/identity.tsx
 var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
 var START2 = SCENES[2].start;
-var rel2 = (t) => t - START2;
+var rel2 = (t) => reveal(START2, t);
 function IdentityScene() {
   const h = HITS.identity;
   return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(Scene, { numeral: "03", numeralClass: "-right-10 -top-[7vh]", className: "bg-ink", children: [
@@ -25519,7 +25523,7 @@ function IdentityScene() {
             animate: { opacity: 1, scale: 1 },
             transition: { duration: 0.35, ease: EASE },
             className: "text-volt",
-            children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(WhaleMark, { size: 160, reveal: "wipe", delay: 0.05, glow: true })
+            children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(WhaleMark, { size: 160, reveal: "wipe", delay: 0.05 - REVEAL_LEAD, glow: true })
           }
         )
       ] }),
@@ -25575,7 +25579,7 @@ function IdentityScene() {
 // app/components/promo/scenes/manifesto.tsx
 var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
 var START3 = SCENES[3].start;
-var rel3 = (t) => t - START3;
+var rel3 = (t) => reveal(START3, t);
 function ManLine({
   at,
   children,
@@ -25632,7 +25636,7 @@ function ManifestoScene() {
           className: "mb-7 font-mono text-[10px] uppercase tracking-[0.4em] text-bone/50",
           initial: { opacity: 0 },
           animate: { opacity: 1 },
-          transition: { delay: 0.14, duration: 0.35 },
+          transition: { delay: 0.14 - REVEAL_LEAD, duration: 0.35 },
           children: "\u2014 THE MANIFESTO"
         }
       ),
@@ -25695,7 +25699,7 @@ function VoidScene() {
             className: "h-[46vmin] w-[46vmin] rounded-full border border-bone/[0.07]",
             initial: { scale: 0.85, opacity: 0 },
             animate: { scale: [0.85, 1.06, 0.98], opacity: [0, 0.9, 0.4] },
-            transition: { duration: 0.92, ease: "easeOut" }
+            transition: { delay: -REVEAL_LEAD, duration: 0.92, ease: "easeOut" }
           }
         ) }),
         /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "absolute inset-x-0 top-[35%] flex flex-col items-center gap-7", children: [
@@ -25705,7 +25709,7 @@ function VoidScene() {
               className: "font-mono text-[10px] uppercase tracking-[0.5em] text-bone/50",
               initial: { opacity: 0, y: 6 },
               animate: { opacity: 1, y: 0 },
-              transition: { delay: 0.18, duration: 0.4 },
+              transition: { delay: 0.18 - REVEAL_LEAD, duration: 0.4 },
               children: "RCOS \u2014 STAND BY"
             }
           ),
@@ -25715,7 +25719,7 @@ function VoidScene() {
               className: "hairline-volt block h-[2px] origin-center",
               initial: { scaleX: 0 },
               animate: { scaleX: 1 },
-              transition: { delay: 0.12, duration: 0.62, ease: [0.83, 0, 0.17, 1] },
+              transition: { delay: 0.12 - REVEAL_LEAD, duration: 0.62, ease: [0.83, 0, 0.17, 1] },
               style: { width: "min(52vw, 420px)" }
             }
           )
@@ -25726,7 +25730,7 @@ function VoidScene() {
             className: "pointer-events-none absolute inset-0 bg-bone",
             initial: { opacity: 0 },
             animate: { opacity: [0, 0, 1] },
-            transition: { delay: 0.8, duration: 0.12, times: [0, 0.55, 1], ease: "linear" }
+            transition: { delay: 0.8 - REVEAL_LEAD, duration: 0.12, times: [0, 0.55, 1], ease: "linear" }
           }
         )
       ]
@@ -25749,7 +25753,7 @@ function Panel({
       className,
       initial: { opacity: 0, y },
       animate: { opacity: 1, y: 0 },
-      transition: { delay: delay2, duration: 0.5, ease: EASE },
+      transition: { delay: delay2 - REVEAL_LEAD, duration: 0.5, ease: EASE },
       children
     }
   );
@@ -25768,7 +25772,7 @@ function Chip({
       style: { transform: `translateZ(${z}px)` },
       initial: { opacity: 0, scale: 0.7 },
       animate: { opacity: 1, scale: 1 },
-      transition: { delay: delay2, type: "spring", stiffness: 380, damping: 24 },
+      transition: { delay: delay2 - REVEAL_LEAD, type: "spring", stiffness: 380, damping: 24 },
       children: [
         /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: `h-1 w-1 rounded-full ${volt ? "bg-volt" : "bg-bone/50"} anim-blink` }),
         children
@@ -25808,8 +25812,8 @@ function ProductScene() {
             initial: { rotateX: 56, rotateZ: -8, y: 210, scale: 0.72, opacity: 0 },
             animate: { rotateX: [56, 10, 8], rotateZ: [-8, 0, 0], y: [210, 0, -6], scale: [0.72, 1, 1.015], opacity: 1 },
             transition: {
-              opacity: { duration: 0.16, ease: "linear" },
-              default: { duration: 4.3, times: [0, 0.38, 1], ease: EASE_SNAP2 }
+              opacity: { delay: -REVEAL_LEAD, duration: 0.16, ease: "linear" },
+              default: { delay: -REVEAL_LEAD, duration: 4.3, times: [0, 0.38, 1], ease: EASE_SNAP2 }
             },
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "absolute inset-0 overflow-hidden rounded-lg border border-bone/20 bg-panel shadow-[0_0_0_1px_rgba(244,245,247,0.05),0_60px_120px_-30px_rgba(0,0,0,0.9),0_0_90px_-18px_rgba(77,107,254,0.28)]", children: [
@@ -25834,7 +25838,7 @@ function ProductScene() {
                         className: `mb-1 flex items-center gap-2.5 rounded px-2.5 py-2 font-mono text-[10px] tracking-[0.18em] ${i === 0 ? "bg-volt-soft text-bone" : "text-bone/60"}`,
                         initial: { opacity: 0, x: -8 },
                         animate: { opacity: 1, x: 0 },
-                        transition: { delay: 0.34 + i * 0.07, duration: 0.3 },
+                        transition: { delay: 0.34 + i * 0.07 - REVEAL_LEAD, duration: 0.3 },
                         children: [
                           i === 0 ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: "h-3 w-[2px] bg-volt" }) : null,
                           item
@@ -25856,7 +25860,13 @@ function ProductScene() {
                         "span",
                         {
                           className: "type-reveal inline-block",
-                          style: { ["--reveal-ms"]: "520ms", ["--reveal-n"]: "40", animationDelay: "0.8s" },
+                          style: {
+                            ["--reveal-ms"]: "520ms",
+                            ["--reveal-n"]: "40",
+                            // a CSS animationDelay is a CSS <time>, NOT a framer `delay`:
+                            // carry the lead in its own unit so the typed line still lands on the beat
+                            animationDelay: `calc(0.8s - ${REVEAL_LEAD}s)`
+                          },
                           children: "route this to the best model \u2014 verify it"
                         }
                       ) }),
@@ -25876,7 +25886,7 @@ function ProductScene() {
                         {
                           initial: { opacity: 0 },
                           animate: { opacity: 1 },
-                          transition: { delay: 1.62, duration: 0.3 },
+                          transition: { delay: 1.62 - REVEAL_LEAD, duration: 0.3 },
                           children: [
                             "Goal received \u2014 routing.",
                             /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("br", {}),
@@ -25897,7 +25907,7 @@ function ProductScene() {
                             className: `whitespace-pre ${l.c}`,
                             initial: { opacity: 0, x: 10 },
                             animate: { opacity: 1, x: 0 },
-                            transition: { delay: 1.5 + i * 0.16, duration: 0.25 },
+                            transition: { delay: 1.5 + i * 0.16 - REVEAL_LEAD, duration: 0.25 },
                             children: l.t
                           },
                           i
@@ -25937,7 +25947,7 @@ function ProductScene() {
 // app/components/promo/scenes/capabilities.tsx
 var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
 var START4 = SCENES[6].start;
-var rel4 = (t) => t - START4;
+var rel4 = (t) => reveal(START4, t);
 var [r1, r2, r3, r4, sweep] = HITS.capabilities;
 var ROWS = [
   { at: r1, n: "01", word: "ROUTE", note: "every goal finds its model" },
@@ -26079,8 +26089,8 @@ function CapabilitiesScene() {
           ] }),
           TERM_STATES.map((state, i) => {
             const D = SCENES[6].end - START4;
-            const from = rel4(state.at) / D;
-            const to = rel4(TERM_STATES[i + 1]?.at ?? SCENES[6].end) / D;
+            const from = (state.at - START4) / D;
+            const to = ((TERM_STATES[i + 1]?.at ?? SCENES[6].end) - START4) / D;
             const fade = 0.012;
             return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
               motion.div,
@@ -26123,7 +26133,7 @@ function CapabilitiesScene() {
 // app/components/promo/scenes/rcos.tsx
 var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
 var START5 = SCENES[7].start;
-var rel5 = (t) => t - START5;
+var rel5 = (t) => reveal(START5, t);
 var EASE_SNAP3 = [0.83, 0, 0.17, 1];
 var PLANES = [
   { label: "MODEL", z: 84 },
@@ -26171,7 +26181,7 @@ function RcosScene() {
             style: { transformStyle: "preserve-3d", width: 300, height: 190 },
             initial: { scale: 1.12 },
             animate: { scale: [1.12, 1, 0.68], opacity: [1, 1, 0.55] },
-            transition: { duration: rel5(SCENES[7].end) + 0.2, times: [0, 0.32, 1], ease: "easeOut" },
+            transition: { duration: SCENES[7].end - START5 + 0.2, times: [0, 0.32, 1], ease: "easeOut" },
             children: PLANES.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
               motion.div,
               {
@@ -26349,6 +26359,8 @@ function RcosScene() {
 var import_react30 = __toESM(require_react(), 1);
 var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 var EASE_SNAP4 = [0.83, 0, 0.17, 1];
+var START6 = SCENES[8].start;
+var rel6 = (t) => reveal(START6, t);
 var MOMENTS = [
   { t: 8.43, label: "THE DROP" },
   { t: 12.61, label: "CAPABILITIES" },
@@ -26401,16 +26413,16 @@ function EndcardScene({ onReplay }) {
               initial: { opacity: 0, y: 14 },
               animate: { opacity: 1, y: 0, scale: [1, 1.035, 1] },
               transition: {
-                opacity: { delay: h.whale - HITS.endcard.slam, duration: 0.5, ease: EASE },
-                y: { delay: h.whale - HITS.endcard.slam, duration: 0.5, ease: EASE },
-                scale: { delay: h.whale - HITS.endcard.slam + 0.6, duration: 7, repeat: Infinity, ease: "easeInOut" }
+                opacity: { delay: rel6(h.whale), duration: 0.5, ease: EASE },
+                y: { delay: rel6(h.whale), duration: 0.5, ease: EASE },
+                scale: { delay: rel6(h.whale) + 0.6, duration: 7, repeat: Infinity, ease: "easeInOut" }
               },
               children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(WhaleMark, { size: 64, glow: true })
             }
           ),
           /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("h2", { className: "text-center font-display font-black uppercase leading-[0.86] type-xwide", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(MaskLine, { delay: 0, duration: 0.42, y: "128%", ease: EASE_SNAP4, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { className: "block text-[clamp(52px,min(11vw,13.5vh),150px)] tracking-[-0.02em]", children: "DEEPSEEK" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(MaskLine, { delay: 0.07, duration: 0.42, y: "128%", ease: EASE_SNAP4, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { className: "block text-[clamp(52px,min(11vw,13.5vh),150px)] tracking-[-0.02em]", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(MaskLine, { delay: rel6(HITS.endcard.slam), duration: 0.42, y: "128%", ease: EASE_SNAP4, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { className: "block text-[clamp(52px,min(11vw,13.5vh),150px)] tracking-[-0.02em]", children: "DEEPSEEK" }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(MaskLine, { delay: rel6(HITS.endcard.slam) + 0.07, duration: 0.42, y: "128%", ease: EASE_SNAP4, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { className: "block text-[clamp(52px,min(11vw,13.5vh),150px)] tracking-[-0.02em]", children: [
               /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { className: "text-volt", children: "\xD7" }),
               " ",
               /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { className: "type-outline", children: "RCOS" }),
@@ -26423,7 +26435,7 @@ function EndcardScene({ onReplay }) {
               className: "hairline-volt mt-7 block h-[3px] origin-center",
               initial: { scaleX: 0 },
               animate: { scaleX: 1 },
-              transition: { delay: h.bar - HITS.endcard.slam, duration: 0.45, ease: EASE },
+              transition: { delay: rel6(h.bar), duration: 0.45, ease: EASE },
               style: { width: "min(50vw, 380px)" }
             }
           ),
@@ -26433,7 +26445,7 @@ function EndcardScene({ onReplay }) {
               className: "mt-6 font-mono text-[10px] uppercase tracking-[0.34em] text-bone/55",
               initial: { opacity: 0, y: 8 },
               animate: { opacity: 1, y: 0 },
-              transition: { delay: h.meta - HITS.endcard.slam, duration: 0.4 },
+              transition: { delay: rel6(h.meta), duration: 0.4 },
               children: "RCOS ON DEEPSEEK HARNESS"
             }
           ),
@@ -26443,7 +26455,7 @@ function EndcardScene({ onReplay }) {
               className: "mt-9 flex flex-wrap items-center justify-center gap-3",
               initial: { opacity: 0, y: 12 },
               animate: { opacity: 1, y: 0 },
-              transition: { delay: h.replay - HITS.endcard.slam, duration: 0.45, ease: EASE },
+              transition: { delay: rel6(h.replay), duration: 0.45, ease: EASE },
               children: [
                 /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
                   "button",
@@ -26456,7 +26468,7 @@ function EndcardScene({ onReplay }) {
                     className: "group flex items-center gap-3 border border-bone/25 bg-bone/[0.02] px-6 py-3 font-mono text-[10px] uppercase tracking-[0.3em] text-bone/85 transition-all duration-200 hover:border-volt hover:text-volt hover:shadow-[0_0_36px_rgba(77,107,254,0.30)]",
                     "aria-label": "Watch the film again",
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Slam, { delay: h.replay - HITS.endcard.slam + 0.1, from: 1.6, duration: 0.4, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.4", "aria-hidden": "true", children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Slam, { delay: rel6(h.replay) + 0.1, from: 1.6, duration: 0.4, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.4", "aria-hidden": "true", children: [
                         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("path", { d: "M3 12a9 9 0 1 0 3-6.7" }),
                         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("path", { d: "M3 4v5h5", strokeLinecap: "round", strokeLinejoin: "round" })
                       ] }) }),
@@ -26515,7 +26527,7 @@ function EndcardScene({ onReplay }) {
               className: "mt-7 flex flex-col items-center gap-3",
               initial: { opacity: 0, y: 10 },
               animate: { opacity: 1, y: 0 },
-              transition: { delay: h.replay - HITS.endcard.slam + 0.35, duration: 0.5 },
+              transition: { delay: rel6(h.replay) + 0.35, duration: 0.5 },
               children: [
                 /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { className: "flex items-center gap-3 font-mono text-[8px] uppercase tracking-[0.4em] text-bone/35", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { className: "h-px w-5 bg-bone/15", "aria-hidden": "true" }),
@@ -26565,7 +26577,7 @@ function EndcardScene({ onReplay }) {
             className: "absolute inset-x-0 bottom-[calc(11vh+16px)] flex flex-col items-center gap-1.5",
             initial: { opacity: 0 },
             animate: { opacity: 1 },
-            transition: { delay: h.replay - HITS.endcard.slam + 0.25, duration: 0.5 },
+            transition: { delay: rel6(h.replay) + 0.25, duration: 0.5 },
             children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { className: "font-mono text-[8px] uppercase tracking-[0.4em] text-bone/45", children: "SCORE \u2014 DS5 FILM BED" })
           }
         )

@@ -70,9 +70,12 @@
 #     smaller set -- which is why the lane asserts BOTH trees.
 #   * a SOURCE workspace
 #     /Users/adam26/Downloads/workspace-36152170-e6b2-41b1-a251-36d6216e50d3 (1)
-#     read at build.mjs:49/:102 (public/), bands.mjs:78/:79
-#     (src/lib/promo/timeline.ts) and og-card.mjs:73/:74
-#     (src/app/opengraph-image.tsx)
+#     read at build.mjs:49/:102 (public/) and og-card.mjs:73/:74
+#     (src/app/opengraph-image.tsx). bands.mjs USED to read
+#     src/lib/promo/timeline.ts from here as well; that read was removed
+#     (bands.mjs parses the onset table out of the project's own copy), so
+#     timeline.ts is no longer a dependency of any stage. The tree itself is
+#     still a live build input for the two files above.
 #   * the chromium pin, four times: bands.mjs:82, capture.mjs:68, og-card.mjs:77,
 #     verify-pages.mjs:99. The harness pins an explicit executablePath BECAUSE
 #     playwright-core@1.63.0's browsers.json asks for chromium-1243, which is NOT
@@ -102,8 +105,8 @@
 # the film -- and this project has ALREADY produced a 505-frame run that was an
 # EMPTY GRAIN FIELD with every gate green (the millisecond/second unit mismatch at
 # the clock-init boundary). So every stage asserts the RECORDED EVIDENCE: frame
-# counts, the aggregate content share, the pinned-clock error, the four-way mutation
-# control, the staged-tree fidelity. See `evidence/*.json` assertions in the helper.
+# counts, the aggregate content share, the pinned-clock error, the mutation
+# controls, the staged-tree fidelity. See `evidence/*.json` assertions in the helper.
 #
 # WHAT IT REFUSES TO DO, PART TWO: TRUST A STALE EVIDENCE FILE. The assertion helper
 # reads `evidence/<stage>.json` from disk, so a stage that FAILS having produced
@@ -118,7 +121,7 @@
 # NOTE the mapping is NOT uniform: the `verify` stage asserts `evidence/pages.json`,
 # not `evidence/verify.json`, because that is the name verify-pages.mjs writes.
 name: ds5-film-render-v1
-description: 'DS5 FILM RENDER -- orchestrate the DS5 harness in place on the Mac and prove the film is real. Eight bash-only nodes, every one an ssh hop to adam-macbook: preflight -> build -> bands -> capture -> encode -> publish -> verify -> receipt. Drives the project at its own root (/tmp/ds5-render) because three stages pin that path and two have no arg parser at all. Every stage asserts the RECORDED EVIDENCE, never an exit code: 505 frames / 505 distinct / aggregate content share >= 0.25 / maxClockError == 0 / hud off / 4-of-4 mutation control / the published tree driven at its real GitHub Pages subpath. Use when: rendering, re-rendering or verifying the DS5 promo film, or proving the pipeline that produces it still holds. NOT for: authoring a new film, editing the film code, or any film project in a different layout. No provider, no model, no credits. Closes the RULE 10c gap #685: film-render and film-refine carry ZERO Mac hops and refuse a Mac write-root with EXIT=2, and the one Mac-reaching lane lands bytes rather than rendering.'
+description: 'DS5 FILM RENDER -- orchestrate the DS5 harness in place on the Mac and prove the film is real. Eight bash-only nodes, every one an ssh hop to adam-macbook: preflight -> build -> bands -> capture -> encode -> publish -> verify -> receipt. Drives the project at its own root (/tmp/ds5-render) because three stages pin that path and two have no arg parser at all. Every stage asserts the RECORDED EVIDENCE, never an exit code: 504 frames / 504 distinct / aggregate content share >= 0.25 / maxClockError == 0 / hud off / 5-of-5 mutation control / the published tree driven at its real GitHub Pages subpath. Use when: rendering, re-rendering or verifying the DS5 promo film, or proving the pipeline that produces it still holds. NOT for: authoring a new film, editing the film code, or any film project in a different layout. No provider, no model, no credits. Closes the RULE 10c gap #685: film-render and film-refine carry ZERO Mac hops and refuse a Mac write-root with EXIT=2, and the one Mac-reaching lane lands bytes rather than rendering.'
 purpose: 'Close the RULE 10c gap for Mac-local film rendering: the estate could render a film in its own house layout, but no lane could drive a Mac-local, non-house-layout film project in place. This lane is also what makes archon-lane laneReachesMac() fire for a media write-root -- a Mac write-root is dispatchable exactly when the lane itself hops to Darwin.'
 routing:
   category: media
@@ -127,7 +130,7 @@ effort: high
 eval:
   check_type: artifact_check
   pass: [preflight.txt says PREFLIGHT OK, build.txt says BUILD OK, bands.txt says BANDS OK, capture.txt says CAPTURE OK, encode.txt says ENCODE OK, publish.txt says PUBLISH OK, verify.txt says VERIFY OK, RECEIPT.md exists and says VERDICT PASS]
-  fail: [missing receipt, VERDICT not PASS, mac bridge unreachable, dependency workspace absent, source workspace absent, chromium unresolvable, frame count not 505, distinct frames not 505, aggregate content share below the floor, pinned-clock error nonzero, mutation control did not reject 4 of 4, published tree missing the lane it documents, pages subpath verification failed]
+  fail: [missing receipt, VERDICT not PASS, mac bridge unreachable, dependency workspace absent, source workspace absent, chromium unresolvable, frame count not 504, distinct frames not 504, aggregate content share below the floor, pinned-clock error nonzero, mutation control did not reject 5 of 5, published tree missing the lane it documents, pages subpath verification failed]
   check: |
     set -eu
     for s in preflight build bands capture encode publish verify; do
@@ -193,6 +196,17 @@ nodes:
       || { echo "PREFLIGHT FAIL: node binary not executable on the mac: $NODE_BIN"; exit 1; }
     echo "node OK"
 
+    # gh, the GitHub CLI the PUBLISH assertion uses to RESOLVE the repo the published
+    # tree advertises. Checked here as well as at publish, so a missing binary fails in
+    # seconds instead of after a full render. It is NOT on PATH for a non-interactive
+    # ssh shell, so assert.mjs pins the absolute path; pin it here too. This is the one
+    # check in preflight that is about a REMOTE fact rather than a local file, and it
+    # exists because on 2026-10-06 the tree shipped a Live URL pointing at a repo that
+    # does not exist, and no local check could have seen it.
+    ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "test -x '/Users/adam26/bin/gh'" \
+      || { echo "PREFLIGHT FAIL: gh is not executable at /Users/adam26/bin/gh -- the publish stage resolves the advertised repo with it, and without it a 404 Live URL cannot be caught"; exit 1; }
+    echo "gh OK"
+
     # The project root, and the three things inside it the harness reads.
     ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" \
       "test -d '$ROOT/harness' && test -d '$ROOT/app' && test -s '$ROOT/audio/ds5-film-bed.mp3' && test -s '$ROOT/audio/ds5-film-bed.wav'" \
@@ -202,15 +216,15 @@ nodes:
     # BOTH workspaces. The DEPENDENCY workspace is where esbuild / playwright-core /
     # ffmpeg-static / ffprobe-static actually live (resolved by createRequire, not
     # out of the project's own node_modules, which is a different and smaller set).
-    # The SOURCE workspace is read for timeline.ts, opengraph-image.tsx and public/.
+    # The SOURCE workspace is read for opengraph-image.tsx and public/.
     ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" \
       "for p in esbuild playwright-core ffmpeg-static ffprobe-static; do test -d '$DEP_WS/node_modules/'\$p || { echo \"MISSING \$p\"; exit 1; }; done" \
       || { echo "PREFLIGHT FAIL: dependency workspace incomplete under $DEP_WS/node_modules"; exit 1; }
     echo "dep workspace OK"
 
     ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" \
-      "test -s '$SRC_WS/src/lib/promo/timeline.ts' && test -s '$SRC_WS/src/app/opengraph-image.tsx' && test -d '$SRC_WS/public'" \
-      || { echo "PREFLIGHT FAIL: source workspace incomplete: $SRC_WS (need src/lib/promo/timeline.ts, src/app/opengraph-image.tsx, public/)"; exit 1; }
+      "test -s '$SRC_WS/src/app/opengraph-image.tsx' && test -d '$SRC_WS/public'" \
+      || { echo "PREFLIGHT FAIL: source workspace incomplete: $SRC_WS (need src/app/opengraph-image.tsx, public/)"; exit 1; }
     echo "source workspace OK"
 
     # Values are carried in FILES, not in a sourced env file: a path with a quote, a
@@ -242,6 +256,7 @@ nodes:
     import path from 'node:path'
     import crypto from 'node:crypto'
     import { createRequire } from 'node:module'
+    import { execFileSync } from 'node:child_process'
 
     const LANE = '/tmp/ds5-lane'
     const rd = (f) => fs.readFileSync(f, 'utf8').trim()
@@ -309,7 +324,7 @@ nodes:
       }
       need(size(path.join(ROOT, 'audio', 'ds5-film-bed.mp3')) === 505196, 'audio/ds5-film-bed.mp3 is not 505196 bytes')
       need(size(path.join(ROOT, 'audio', 'ds5-film-bed.wav')) === 4032078, 'audio/ds5-film-bed.wav is not 4032078 bytes')
-      need(fs.existsSync(path.join(SRC_WS, 'src', 'lib', 'promo', 'timeline.ts')), 'source workspace missing src/lib/promo/timeline.ts')
+      need(fs.existsSync(path.join(ROOT, 'app', 'lib', 'promo', 'timeline.ts')), 'the project is missing app/lib/promo/timeline.ts -- bands.mjs parses the onset table out of it in-tree')
       need(fs.existsSync(path.join(SRC_WS, 'src', 'app', 'opengraph-image.tsx')), 'source workspace missing src/app/opengraph-image.tsx')
       need(fs.existsSync(path.join(SRC_WS, 'public')), 'source workspace missing public/')
       for (const d of ['frames','dist','pages','out','evidence']) {
@@ -347,15 +362,15 @@ nodes:
       need(j.canonical === true, 'capture.json .canonical !== true')
       need(j.hud === 'off', "capture.json .hud = " + j.hud + " (want 'off' -- a faithful HUD paints the overlay into the captured frame)")
       need(j.fps === 24, 'capture.json .fps = ' + j.fps + ' (want 24)')
-      need(j.audioDuration === 21.024, 'capture.json .audioDuration = ' + j.audioDuration + ' (want 21.024)')
-      need(j.frames && j.frames.start === 0 && j.frames.end === 504 && j.frames.count === 505,
-        'capture.json frames != 0..504 count 505: ' + JSON.stringify(j.frames))
-      need(j.distinctFrames === 505, 'capture.json .distinctFrames = ' + j.distinctFrames + ' (want 505 -- a repeated frame is a stalled clock)')
+      need(j.audioDuration === 21.000, 'capture.json .audioDuration = ' + j.audioDuration + ' (want 21.000)')
+      need(j.frames && j.frames.start === 0 && j.frames.end === 503 && j.frames.count === 504,
+        'capture.json frames != 0..503 count 504: ' + JSON.stringify(j.frames))
+      need(j.distinctFrames === 504, 'capture.json .distinctFrames = ' + j.distinctFrames + ' (want 504 -- a repeated frame is a stalled clock)')
       need(j.contentFrames && j.contentFrames.share >= 0.25,
         'capture.json contentFrames.share = ' + (j.contentFrames && j.contentFrames.share) + ' -- below the 0.25 aggregate floor, i.e. the film is an empty grain field')
       need(j.maxClockError === 0, 'capture.json .maxClockError = ' + j.maxClockError + ' -- the pinned clock drifted')
-      need(j.analyseCalls && j.analyseCalls.freq === 505 && j.analyseCalls.wave === 505,
-        'capture.json analyseCalls != 505/505: ' + JSON.stringify(j.analyseCalls))
+      need(j.analyseCalls && j.analyseCalls.freq === 504 && j.analyseCalls.wave === 504,
+        'capture.json analyseCalls != 504/504: ' + JSON.stringify(j.analyseCalls))
       need(Array.isArray(j.problems) && j.problems.length === 0, 'capture.json .problems non-empty: ' + JSON.stringify(j.problems))
       need(Array.isArray(j.consoleErrors) && j.consoleErrors.length === 0, 'capture.json .consoleErrors non-empty')
       need(typeof j.clockInitSha256 === 'string' && /^[0-9a-f]{64}$/.test(j.clockInitSha256), 'capture.json .clockInitSha256 is not a 64-hex digest')
@@ -364,24 +379,24 @@ nodes:
     if (stage === 'encode') {
       const j = ev('encode')
       need(j.ok === true, 'encode.json .ok !== true')
-      need(j.frames && j.frames.count === 505, 'encode.json frames.count != 505')
+      need(j.frames && j.frames.count === 504, 'encode.json frames.count != 504')
       const x = j.encodes && j.encodes['ds5-film-x.mp4']
       const hd = j.encodes && j.encodes['ds5-film-1080p.mp4']
       need(!!x, 'encode.json has no ds5-film-x.mp4 entry')
       need(!!hd, 'encode.json has no ds5-film-1080p.mp4 entry')
       if (x) {
         need(x.ok === true, 'the X cut .ok !== true')
-        need(x.controlRejected === 4, 'the X cut .controlRejected = ' + x.controlRejected + ' (want 4)')
+        need(x.controlRejected === 5, 'the X cut .controlRejected = ' + x.controlRejected + ' (want 5)')
         need(x.video && x.video.codec === 'h264' && x.video.pixFmt === 'yuv420p', 'the X cut is not H.264/yuv420p')
         need(x.video && x.video.w === 1280 && x.video.h === 720, 'the X cut is not 1280x720')
-        need(x.video && x.video.frames === 505 && x.video.fps === 24, 'the X cut is not 505 frames at 24 fps')
+        need(x.video && x.video.frames === 504 && x.video.fps === 24, 'the X cut is not 504 frames at 24 fps')
         need(x.audio && x.audio.codec === 'aac' && x.audio.sampleRate === 48000 && x.audio.ch === 2, 'the X cut audio is not AAC 48 kHz stereo')
-        need(x.bytes > 0 && x.durationS > 21 && x.durationS < 21.2, 'the X cut bytes/duration is out of range: ' + x.bytes + ' / ' + x.durationS)
+        need(x.bytes > 0 && Math.abs(x.durationS - 21) <= 1 / 24, 'the X cut bytes/duration is out of range: ' + x.bytes + ' / ' + x.durationS + ' (want 21.000 +/- 1 frame)')
       }
       if (hd) {
         need(hd.ok === true, 'the 1080p cut .ok !== true')
-        need(hd.controlRejected === 4, 'the 1080p cut .controlRejected = ' + hd.controlRejected + ' (want 4)')
-        need(hd.video && hd.video.w === 1920 && hd.video.h === 1080 && hd.video.frames === 505, 'the 1080p cut is not 1920x1080 with 505 frames')
+        need(hd.controlRejected === 5, 'the 1080p cut .controlRejected = ' + hd.controlRejected + ' (want 5)')
+        need(hd.video && hd.video.w === 1920 && hd.video.h === 1080 && hd.video.frames === 504, 'the 1080p cut is not 1920x1080 with 504 frames')
       }
       need(Array.isArray(j.problems) && j.problems.length === 0, 'encode.json .problems non-empty')
     }
@@ -389,9 +404,9 @@ nodes:
     if (stage === 'publish') {
       const j = ev('publish')
       need(j.ok === true, 'publish.json .ok !== true')
-      need(j.control && j.control.rejected === 4 && j.control.total === 4,
-        'publish.json control = ' + JSON.stringify(j.control) + ' (want 4 of 4 mutations rejected)')
-      need(Array.isArray(j.predicates) && j.predicates.length === 5, 'publish.json .predicates is not the 5-predicate set')
+      need(j.control && j.control.rejected === 5 && j.control.total === 5,
+        'publish.json control = ' + JSON.stringify(j.control) + ' (want 5 of 5 mutations rejected)')
+      need(Array.isArray(j.predicates) && j.predicates.length === 6, 'publish.json .predicates is not the 6-predicate set')
       need(Array.isArray(j.problems) && j.problems.length === 0, 'publish.json .problems non-empty: ' + JSON.stringify(j.problems))
       need(Array.isArray(j.dropped) && j.dropped.includes('__cap.html') && j.dropped.includes('__cap.js'),
         'publish.json .dropped does not name both capture-machinery files: ' + JSON.stringify(j.dropped))
@@ -416,6 +431,58 @@ nodes:
         const b = h(pubLane)
         need(a === b,
           'the published lane is NOT byte-identical to the source lane: ' + a.slice(0, 12) + ' != ' + b.slice(0, 12))
+      }
+
+      // The published tree advertises its OWN address. README.md's "Live:" URL and
+      // watch.html's source link are both generated from publish.mjs's REPO constant,
+      // and until this assertion existed NOTHING checked either string -- not against
+      // the evidence, and not against reality. Measured 2026-10-06: the tree shipped
+      // `**Live:** https://adamnorm4wd.github.io/ds5-harness-desktop/` for a repo that
+      // lives at Foshowithit, and `gh repo view adamnorm4wd/ds5-harness-desktop` answers
+      // "Could not resolve to a Repository" -- so the site's own README advertised a
+      // 404 as its address, with every gate green. A string comparison of the three
+      // generated files against each other would NOT have caught it: all three agreed
+      // on the wrong value. Only RESOLVING the repo does, so this resolves it.
+      //
+      // gh is not on PATH for a non-interactive ssh shell, so the binary is pinned.
+      // The token lives in the macOS keyring; verified reachable under a stripped
+      // environment (env -i HOME=... PATH=/usr/bin:/bin) on 2026-10-06. This makes the
+      // publish stage network-dependent on purpose: a publish stage that cannot verify
+      // the address it is publishing to has not proven anything, and must not pass.
+      // The render stages (build/bands/capture/encode) stay fully offline.
+      {
+        const repo = j.repo
+        const wellFormed = typeof repo === 'string' && /^[^\/\s]+\/[^\/\s]+$/.test(repo)
+        need(wellFormed, 'publish.json .repo is not OWNER/NAME: ' + JSON.stringify(repo))
+        if (wellFormed) {
+          const [owner, name] = repo.split('/')
+          const live = 'https://' + owner + '.github.io/' + name + '/'
+          const readmeP = path.join(ROOT, 'pages', 'README.md')
+          const watchP = path.join(ROOT, 'pages', 'watch.html')
+          const readme = fs.existsSync(readmeP) ? fs.readFileSync(readmeP, 'utf8') : ''
+          const watch = fs.existsSync(watchP) ? fs.readFileSync(watchP, 'utf8') : ''
+          need(readme.includes(live),
+            'pages/README.md does not advertise the recorded Live URL ' + live +
+            ' -- the generated tree and publish.json disagree about which repo this is')
+          need(watch.includes('https://github.com/' + repo),
+            'pages/watch.html does not link https://github.com/' + repo +
+            ' -- the generated tree and publish.json disagree about which repo this is')
+
+          const GH = '/Users/adam26/bin/gh'
+          let resolved = false
+          let why = ''
+          try {
+            const out = execFileSync(GH, ['repo', 'view', repo, '--json', 'name'],
+              { encoding: 'utf8', timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'] })
+            resolved = /"name"\s*:\s*"/.test(out)
+            if (!resolved) why = 'gh returned no name field: ' + out.slice(0, 120)
+          } catch (e) {
+            why = ((e && (e.stderr || e.message)) || '').toString().split('\n')[0].slice(0, 200)
+          }
+          need(resolved,
+            'the published repo does not resolve: `gh repo view ' + repo + '` failed -- ' +
+            'the site would advertise a 404 as its own address' + (why ? ' (' + why + ')' : ''))
+        }
       }
     }
 
@@ -529,7 +596,7 @@ nodes:
     # rm first: a stale evidence file would let a FAILED stage pass. See the header.
     ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "rm -f '$ROOT/evidence/capture.json'"
 
-    # 505 frames through a pinned virtual clock: ~158.5 s measured, so the node
+    # 504 frames through a pinned virtual clock: ~158.5 s measured, so the node
     # timeout below is ~5x that. This is the only slow stage.
     ssh -o BatchMode=yes -o ConnectTimeout=15 "$MAC" "cd '$ROOT' && '$NODE_BIN' harness/capture.mjs" \
       > "$ARTIFACTS_DIR/capture.log" 2>&1 || true
@@ -692,9 +759,9 @@ nodes:
       echo "| --- | --- |"
       echo "| build | \`boundary.pathsRelativised\`, \`publishedHasLever === false\`, \`captureHasLever === true\`, \`ogCard.controlRejected === 4\` |"
       echo "| bands | \`canonical === true\`, and exactly ONE zero-error FFT normalisation candidate of four |"
-      echo "| capture | 505 frames / 505 distinct / \`contentFrames.share >= 0.25\` / \`maxClockError === 0\` / \`hud === 'off'\` / \`analyseCalls 505/505\` |"
-      echo "| encode | both cuts \`ok\`, each \`controlRejected === 4\`, H.264/yuv420p, 505 frames, AAC 48 kHz stereo |"
-      echo "| publish | \`control 4/4\`, 5 predicates, both \`__cap\` files dropped, \`problems\` empty |"
+      echo "| capture | 504 frames / 504 distinct / \`contentFrames.share >= 0.25\` / \`maxClockError === 0\` / \`hud === 'off'\` / \`analyseCalls 504/504\` |"
+      echo "| encode | both cuts \`ok\`, each \`controlRejected === 5\`, H.264/yuv420p, 504 frames, AAC 48 kHz stereo |"
+      echo "| publish | \`control 5/5\`, 6 predicates, both \`__cap\` files dropped, \`problems\` empty |"
       echo "| verify | \`staged.matchesTree\`, gate appeared, film started and detached, \`notFoundHard === 0\`, all three assets 200 |"
       echo
       echo "The content floor is the one that matters. This pipeline has already produced"
